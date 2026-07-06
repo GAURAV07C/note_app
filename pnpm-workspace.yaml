@@ -1,0 +1,10 @@
+allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': false
+  bcrypt: false
+  prisma: false
+  sharp: false
+  unrs-resolver: false
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
