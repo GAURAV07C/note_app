@@ -23,14 +23,32 @@ export function Navbar() {
   useEffect(() => {
     let isMounted = true;
 
-    const run = () => {
-      // Avoid state updates synchronously during the effect phase.
-      setTimeout(() => {
+    const run = async () => {
+      setTimeout(async () => {
         if (!isMounted) return;
         const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
+
         if (token) {
-          setUserEmail("user@example.com");
+          try {
+            const res = await fetch("/api/auth/me", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.user?.email) {
+              setUserEmail(data.user.email);
+            } else {
+              setUserEmail("");
+            }
+          } catch {
+            setUserEmail("");
+          }
+        } else {
+          setUserEmail("");
         }
       }, 0);
     };
