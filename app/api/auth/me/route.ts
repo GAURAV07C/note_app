@@ -28,7 +28,7 @@ export async function GET(request: Request) {
         email: user.email,
       },
     });
-  } catch (error) {
+  } catch {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

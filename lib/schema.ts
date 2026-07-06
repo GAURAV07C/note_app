@@ -14,6 +14,10 @@ export const createNoteSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
   userId: z.string().cuid(),
+  shareType: z.enum(["ONE_TIME", "TIME_BASED"]).optional(),
+  accessType: z.enum(["PUBLIC", "PASSWORD"]).optional(),
+  password: z.string().optional(),
+  expiresAt: z.string().datetime().optional(),
 });
 
 export const updateNoteSchema = z.object({
