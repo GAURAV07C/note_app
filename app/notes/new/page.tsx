@@ -34,6 +34,7 @@ export default function NewNotePage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [shareLink, setShareLink] = useState("")
+  const [generatedPassword, setGeneratedPassword] = useState("")
   const [copied, setCopied] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,8 +53,8 @@ export default function NewNotePage() {
       const body: Record<string, unknown> = {
         title,
         content,
-        shareType: shareType || undefined,
-        accessType: accessType || undefined,
+        shareType: shareType && shareType !== "NONE" ? shareType : undefined,
+        accessType: accessType && accessType !== "NONE" ? accessType : undefined,
         password: password || undefined,
         expiresAt: expiresAt || undefined,
       }
@@ -76,6 +77,10 @@ export default function NewNotePage() {
 
       if (data.shareLink) {
         setShareLink(data.shareLink)
+        const plainPasswordFromResponse = data.plainPassword || data.share?.plainPassword
+        if (plainPasswordFromResponse) {
+          setGeneratedPassword(plainPasswordFromResponse)
+        }
       } else {
         router.push("/notes")
       }
@@ -123,7 +128,7 @@ export default function NewNotePage() {
             {shareLink && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-4 text-sm dark:bg-green-950 dark:border-green-800 dark:text-green-200">
                 <p className="mb-2 font-medium">Share link created successfully!</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-3">
                   <code className="flex-1 rounded bg-background/80 px-2 py-1 text-xs break-all">
                     {shareLink}
                   </code>
@@ -137,6 +142,14 @@ export default function NewNotePage() {
                     {copied ? "Copied" : "Copy"}
                   </Button>
                 </div>
+                {generatedPassword && (
+                  <div className="flex items-center gap-2 rounded bg-yellow-50 p-2 text-xs dark:bg-yellow-900/30 dark:text-yellow-200">
+                    <span className="font-medium">Password:</span>
+                    <code className="flex-1 rounded bg-background/80 px-2 py-1">
+                      {generatedPassword}
+                    </code>
+                  </div>
+                )}
               </div>
             )}
 

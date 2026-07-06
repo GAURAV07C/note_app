@@ -9,9 +9,12 @@ export async function POST(request: Request) {
     const result = registerSchema.safeParse(body);
 
     if (!result.success) {
+      const flattened = result.error.flatten();
+      const fieldErrors = Object.values(flattened.fieldErrors).flat().filter(Boolean);
+      const message = fieldErrors.length > 0 ? fieldErrors.join(", ") : flattened.formErrors.join(", ") || "Invalid input";
       return Response.json(
         {
-          error: result.error.flatten(),
+          error: message,
         },
         { status: 400 },
       );

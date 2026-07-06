@@ -17,8 +17,11 @@ export async function POST(request: NextRequest) {
     const result = createNoteSchema.safeParse(body);
 
     if (!result.success) {
+      const flattened = result.error.flatten();
+      const fieldErrors = Object.values(flattened.fieldErrors).flat().filter(Boolean);
+      const message = fieldErrors.length > 0 ? fieldErrors.join(", ") : flattened.formErrors.join(", ") || "Invalid input";
       return Response.json(
-        { error: result.error.flatten() },
+        { error: message },
         { status: 400 }
       );
     }
@@ -29,14 +32,35 @@ export async function POST(request: NextRequest) {
     let plainPassword: string | null = null;
     let shareData: Prisma.ShareCreateWithoutNoteInput | undefined = undefined;
 
-    if (shareType && accessType) {
+    const resolvedShareType = shareType || (accessType ? "TIME_BASED" : undefined);
+
+    if (resolvedShareType && accessType) {
       shareData = {
-        shareType,
+        shareType: resolvedShareType,
         accessType,
       };
 
       if (expiresAt) {
-        shareData.expiresAt = new Date(expiresAt);
+        const normalized = expiresAt.replace(" ", "T");
+        const formats = [normalized];
+        const ddMmYyyy = normalized.match(/^(\d{2})-(\d{2})-(\d{4})/);
+        if (ddMmYyyy) {
+          const [, dd, mm, yyyy] = ddMmYyyy;
+          formats.push(`${yyyy}-${mm}-${dd}${normalized.slice(10)}`);
+        }
+
+        const parsed = formats.map((value) => {
+          const date = new Date(value);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }).find((date) => date !== null) ?? null;
+
+        if (!parsed) {
+          return Response.json(
+            { error: "Invalid datetime format. Use YYYY-MM-DDTHH:MM" },
+            { status: 400 }
+          );
+        }
+        shareData.expiresAt = parsed;
       }
 
       if (accessType === "PASSWORD") {
@@ -72,6 +96,7 @@ export async function POST(request: NextRequest) {
         note,
         share: share ? { ...share } : null,
         shareLink,
+        plainPassword: plainPassword || undefined,
       },
       { status: 201 }
     );

@@ -13,13 +13,38 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, FileText, Calendar } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ArrowLeft, FileText, Calendar, Share2, Copy } from "lucide-react"
+import AuthGuard from "@/components/shared/AuthGuard"
 
 type Note = {
   id: string
   title: string
   content: string
   createdAt: string
+  shares: Array<{
+    id: string
+    shareType: string
+    accessType: string
+    isRevoked: boolean
+    expiresAt: string | null
+  }>
 }
 
 export default function NotePage() {
@@ -29,6 +54,15 @@ export default function NotePage() {
   const [note, setNote] = useState<Note | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [shareLink, setShareLink] = useState("")
+  const [generatedPassword, setGeneratedPassword] = useState("")
+  const [shareType, setShareType] = useState("")
+  const [accessType, setAccessType] = useState("")
+  const [password, setPassword] = useState("")
+  const [expiresAt, setExpiresAt] = useState("")
+  const [creatingShare, setCreatingShare] = useState(false)
+  const [shareError, setShareError] = useState("")
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -57,6 +91,61 @@ export default function NotePage() {
 
     fetchNote()
   }, [id])
+
+  const hasActiveShare = note?.shares?.some(
+    (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
+  )
+
+  const handleCreateShare = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setShareError("")
+    setCreatingShare(true)
+
+    try {
+      const token = localStorage.getItem("token")
+      const body: Record<string, unknown> = {
+        shareType: shareType && shareType !== "NONE" ? shareType : undefined,
+        accessType: accessType && accessType !== "NONE" ? accessType : undefined,
+        password: accessType === "PASSWORD" && password ? password : undefined,
+        expiresAt: expiresAt || undefined,
+      }
+
+      const res = await fetch(`/api/notes/${id}/share`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setShareError(data.error || "Failed to create share link")
+        return
+      }
+
+      setShareLink(data.shareLink)
+      const plainPasswordFromResponse = data.share?.plainPassword || data.plainPassword
+      if (plainPasswordFromResponse) {
+        setGeneratedPassword(plainPasswordFromResponse)
+      }
+      setShareDialogOpen(false)
+      setNote((prev) =>
+        prev
+          ? {
+              ...prev,
+              shares: prev.shares ? [...prev.shares, data.share] : [data.share],
+            }
+          : prev
+      )
+    } catch {
+      setShareError("Something went wrong")
+    } finally {
+      setCreatingShare(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -128,6 +217,17 @@ export default function NotePage() {
                 <CardTitle className="text-2xl">{note.title}</CardTitle>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => setShareDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                {hasActiveShare ? "Share Again" : "Share Note"}
+              </Button>
+            </div>
             <CardDescription className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Created: {new Date(note.createdAt).toLocaleString()}
@@ -139,6 +239,122 @@ export default function NotePage() {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Share Note</DialogTitle>
+              <DialogDescription>
+                Create a share link for this note. Choose share type and access options.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateShare} className="space-y-4">
+              {shareError && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {shareError}
+                </div>
+              )}
+              {shareLink && (
+                <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm dark:bg-green-950 dark:border-green-800 dark:text-green-200">
+                  <p className="mb-2 font-medium">Share link created!</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <code className="flex-1 rounded bg-background/80 px-2 py-1 text-xs break-all">
+                      {shareLink}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(shareLink)}
+                      className="shrink-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {generatedPassword && (
+                    <div className="flex items-center gap-2 rounded bg-yellow-50 p-2 text-xs dark:bg-yellow-900/30 dark:text-yellow-200">
+                      <span className="font-medium">Password:</span>
+                      <code className="flex-1 rounded bg-background/80 px-2 py-1">
+                        {generatedPassword}
+                      </code>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Share Type</Label>
+                <Select value={shareType} onValueChange={setShareType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
+                    <SelectItem value="ONE_TIME">One-time</SelectItem>
+                    <SelectItem value="TIME_BASED">Time-based</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Access Type</Label>
+                <Select value={accessType} onValueChange={setAccessType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="PASSWORD">Password</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {accessType === "PASSWORD" && (
+                <div className="space-y-2">
+                  <Label htmlFor="share-password">
+                    Password{" "}
+                    <span className="text-muted-foreground font-normal">
+                      (leave blank for auto-generated)
+                    </span>
+                  </Label>
+                  <Input
+                    id="share-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Optional password"
+                  />
+                </div>
+              )}
+              {shareType === "TIME_BASED" && (
+                <div className="space-y-2">
+                  <Label htmlFor="share-expires">Expires At</Label>
+                  <Input
+                    id="share-expires"
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                  />
+                </div>
+              )}
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShareDialogOpen(false)
+                    setShareLink("")
+                    setGeneratedPassword("")
+                    setShareError("")
+                  }}
+                  disabled={creatingShare}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={creatingShare || !shareType || !accessType}>
+                  {creatingShare ? "Creating..." : "Create Share Link"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,28 +12,43 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { PenLine, LogOut, Plus, FileText } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { PenLine, LogOut, Plus, FileText } from "lucide-react";
 
 export function Navbar() {
-  const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userEmail, setUserEmail] = useState("")
+  const pathname = usePathname();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    setIsLoggedIn(!!token)
-    if (token) {
-      setUserEmail("user@example.com")
-    }
-  }, [])
+    let isMounted = true;
+
+    const run = () => {
+      // Avoid state updates synchronously during the effect phase.
+      setTimeout(() => {
+        if (!isMounted) return;
+        const token = localStorage.getItem("token");
+        setIsLoggedIn(!!token);
+        if (token) {
+          setUserEmail("user@example.com");
+        }
+      }, 0);
+    };
+
+    run();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token")
-    setIsLoggedIn(false)
-    setUserEmail("")
-    window.location.href = "/"
-  }
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setUserEmail("");
+    window.location.href = "/";
+  };
 
   return (
     <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-md">
@@ -66,7 +81,10 @@ export function Navbar() {
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-xs font-medium">
                       {userEmail.charAt(0).toUpperCase()}
@@ -85,19 +103,28 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/notes/new" className="flex items-center gap-2 cursor-pointer">
+                  <Link
+                    href="/notes/new"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <Plus className="h-4 w-4" />
                     <span>New Note</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <FileText className="h-4 w-4" />
                     <span>Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600 cursor-pointer"
+                >
                   <LogOut className="h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -116,7 +143,7 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

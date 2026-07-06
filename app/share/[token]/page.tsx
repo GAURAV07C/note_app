@@ -1,110 +1,125 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Lock, Eye, Calendar, Shield } from "lucide-react"
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Lock, Eye, Calendar, Shield } from "lucide-react";
 
 type ShareInfo = {
   note: {
-    id: string
-    title: string
-    content: string
-    createdAt: string
-  }
-  shareType: string
-  accessType: string
-  viewCount?: number
-}
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+  };
+  shareType: string;
+  accessType: string;
+  viewCount?: number;
+};
 
 export default function SharePage() {
-  const params = useParams()
-  const token = params.token as string
-  const [data, setData] = useState<ShareInfo | null>(null)
-  const [error, setError] = useState("")
-  const [requiresPassword, setRequiresPassword] = useState(false)
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [viewCount, setViewCount] = useState<number | null>(null)
+  const params = useParams();
+  const token = params.token as string;
+  const [data, setData] = useState<ShareInfo | null>(null);
+  const [error, setError] = useState("");
+  const [requiresPassword, setRequiresPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [viewCount, setViewCount] = useState<number | null>(null);
 
   const fetchShare = async () => {
-    setLoading(true)
-    setError("")
+    setLoading(true);
+    setError("");
 
     try {
-      const res = await fetch(`/api/share/${token}`)
-      const json = await res.json()
+      const res = await fetch(`/api/share/${token}`);
+      const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Invalid share link")
-        return
+        setError(json.error || "Invalid share link");
+        return;
       }
 
       if (json.requiresPassword) {
-        setRequiresPassword(true)
-        return
+        setRequiresPassword(true);
+        return;
       }
 
       setData({
         note: json.note,
         shareType: json.shareType,
         accessType: json.accessType,
-      })
-      setViewCount(json.viewCount ?? null)
+      });
+      setViewCount(json.viewCount ?? null);
     } catch {
-      setError("Something went wrong")
+      setError("Something went wrong");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchShare()
-  }, [token])
+    let isMounted = true;
+
+    const run = async () => {
+      // Avoid state updates synchronously during the effect phase.
+      setTimeout(async () => {
+        if (!isMounted) return;
+        await fetchShare();
+      }, 0);
+    };
+
+    run();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const handleUnlock = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
       const res = await fetch(`/api/share/${token}/unlock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
-      })
+      });
 
-      const json = await res.json()
+      const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Failed to unlock")
-        return
+        setError(json.error || "Failed to unlock");
+        return;
       }
 
       setData({
         note: json.note,
         shareType: json.shareType,
         accessType: json.accessType,
-      })
-      setRequiresPassword(false)
-      setViewCount(json.viewCount ?? null)
+      });
+      setRequiresPassword(false);
+      setViewCount(json.viewCount ?? null);
     } catch {
-      setError("Something went wrong")
+      setError("Something went wrong");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading && !data && !requiresPassword) {
     return (
@@ -121,7 +136,7 @@ export default function SharePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (error && !requiresPassword && !data) {
@@ -129,14 +144,16 @@ export default function SharePage() {
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-destructive">Unable to view note</CardTitle>
+            <CardTitle className="text-destructive">
+              Unable to view note
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (requiresPassword) {
@@ -176,11 +193,11 @@ export default function SharePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!data) {
-    return null
+    return null;
   }
 
   return (
@@ -221,5 +238,5 @@ export default function SharePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -17,7 +17,7 @@ export const createNoteSchema = z.object({
   shareType: z.enum(["ONE_TIME", "TIME_BASED"]).optional(),
   accessType: z.enum(["PUBLIC", "PASSWORD"]).optional(),
   password: z.string().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.string().optional(),
 });
 
 export const updateNoteSchema = z.object({
@@ -30,8 +30,8 @@ export const createShareSchema = z.object({
   noteId: z.string().cuid(),
   shareType: z.enum(["ONE_TIME", "TIME_BASED"]),
   accessType: z.enum(["PUBLIC", "PASSWORD"]),
-  passwordHash: z.string().optional(),
-  expiresAt: z.string().datetime().optional(),
+  password: z.string().optional(),
+  expiresAt: z.string().optional(),
 });
 
 export const updateShareSchema = z.object({

@@ -9,7 +9,10 @@ export async function POST(request: Request) {
     const result = loginSchema.safeParse(body);
 
     if (!result.success) {
-      return Response.json({ error: result.error.flatten() }, { status: 400 });
+      const flattened = result.error.flatten();
+      const fieldErrors = Object.values(flattened.fieldErrors).flat().filter(Boolean);
+      const message = fieldErrors.length > 0 ? fieldErrors.join(", ") : flattened.formErrors.join(", ") || "Invalid input";
+      return Response.json({ error: message }, { status: 400 });
     }
 
     const email = result.data.email.trim().toLowerCase();
