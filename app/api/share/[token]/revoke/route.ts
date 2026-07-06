@@ -1,17 +1,18 @@
 import { NextRequest } from "next/server";
 import { shareRepo, noteRepo } from "@/lib/repositories";
+import { getAuthenticatedUserId } from "@/lib/api-auth";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = await params;
-    const userId = request.headers.get("x-user-id");
-
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { token } = await params;
 
     const share = await shareRepo.findByToken(token);
 

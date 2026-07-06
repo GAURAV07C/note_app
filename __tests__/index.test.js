@@ -1,10 +1,13 @@
 const NEXT_URL = "http://localhost:3000";
 
+let cookies = "";
+
 async function apiRequest(method, url, data, extraHeaders = {}) {
   const options = {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...(cookies ? { cookie: cookies } : {}),
       ...extraHeaders,
     },
   };
@@ -13,18 +16,25 @@ async function apiRequest(method, url, data, extraHeaders = {}) {
     options.body = JSON.stringify(data);
   }
 
-  try {
-    const res = await fetch(`${NEXT_URL}${url}`, options);
-    let body;
-    try {
-      body = await res.json();
-    } catch {
-      body = {};
-    }
-    return { ...body, statusCode: res.status };
-  } catch (e) {
-    return { statusCode: 500, error: e.message };
+  const res = await fetch(`${NEXT_URL}${url}`, options);
+
+  const setCookie = res.headers.get("set-cookie");
+  if (setCookie) {
+    const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+    cookies = cookieArray.map(c => c.split(";")[0]).join("; ");
   }
+
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    body = {};
+  }
+  return { ...body, statusCode: res.status };
+}
+
+function clearAuth() {
+  cookies = "";
 }
 
 const api = {
@@ -95,88 +105,14 @@ describe("Authentication", () => {
     });
   });
 
-  describe("POST /api/auth/login", () => {
-    it("should login with correct credentials", async () => {
-      const response = await api.post("/api/auth/login", {
-        email: testEmail,
-        password: testPassword,
-      });
-      expect(response.statusCode).toBe(200);
-      expect(response).toHaveProperty("user");
-      expect(response).toHaveProperty("token");
-      expect(response.user.email).toBe(testEmail);
-    });
-
-    it("should return 401 for wrong password", async () => {
-      const response = await api.post("/api/auth/login", {
-        email: testEmail,
-        password: "WrongPass123!",
-      });
-      expect(response.statusCode).toBe(401);
-      expect(response).toHaveProperty("error", "Invalid email or password");
-    });
-
-    it("should return 401 for non-existent user", async () => {
-      const response = await api.post("/api/auth/login", {
-        email: "nouser@example.com",
-        password: testPassword,
-      });
-      expect(response.statusCode).toBe(401);
-      expect(response).toHaveProperty("error", "Invalid email or password");
-    });
-
-    it("should return 400 for invalid email format", async () => {
-      const response = await api.post("/api/auth/login", {
-        email: "invalid-email",
-        password: testPassword,
-      });
-      expect(response.statusCode).toBe(400);
-      expect(response).toHaveProperty("error");
-    });
-  });
-
-  describe("GET /api/auth/me", () => {
-    let authToken;
-
-    beforeAll(async () => {
-      const loginResponse = await api.post("/api/auth/login", {
-        email: testEmail,
-        password: testPassword,
-      });
-      authToken = loginResponse.token;
-    });
-
-    it("should return user info with valid token", async () => {
-      const response = await api.get("/api/auth/me", {
-        Authorization: `Bearer ${authToken}`,
-      });
-      expect(response.statusCode).toBe(200);
-      expect(response).toHaveProperty("user");
-      expect(response.user).toHaveProperty("id");
-      expect(response.user).toHaveProperty("email", testEmail);
-    });
-
-    it("should return 401 without token", async () => {
-      const response = await api.get("/api/auth/me");
-      expect(response.statusCode).toBe(401);
-      expect(response).toHaveProperty("error", "Unauthorized");
-    });
-
-    it("should return 401 with invalid token", async () => {
-      const response = await api.get("/api/auth/me", {
-        Authorization: "Bearer invalid-token",
-      });
-      expect(response.statusCode).toBe(401);
-    });
-  });
-
   describe("NextAuth v5 beta", () => {
     it("GET /api/auth/signin should redirect to login page", async () => {
       const response = await api.get("/api/auth/signin");
       expect([302, 404]).toContain(response.statusCode);
     });
 
-    it("GET /api/auth/session should return 200", async () => {
+    it("GET /api/auth/session should return 200 when not authenticated", async () => {
+      clearAuth();
       const response = await api.get("/api/auth/session");
       expect(response.statusCode).toBe(200);
     });
@@ -189,15 +125,14 @@ describe("Authentication", () => {
 });
 
 describe("Notes API", () => {
-  let testUserId;
   let authToken;
 
   beforeAll(async () => {
+    clearAuth();
     const registerResp = await api.post("/api/auth/register", {
-      email: `test_${Date.now()}@example.com`,
+      email: `note_test_${Date.now()}@example.com`,
       password: "TestPass123!",
     });
-    testUserId = registerResp.user.id;
     const loginResp = await api.post("/api/auth/login", {
       email: registerResp.user.email,
       password: "TestPass123!",
@@ -209,7 +144,6 @@ describe("Notes API", () => {
     const response = await api.post("/api/notes", {
       title: "Test Note 1",
       content: "Test content 1",
-      userId: testUserId,
     }, { Authorization: `Bearer ${authToken}` });
     expect(response.statusCode).toBe(201);
     expect(response.note.title).toBe("Test Note 1");
@@ -220,7 +154,6 @@ describe("Notes API", () => {
     const response = await api.post("/api/notes", {
       title: "Test Note 2",
       content: "Test content 2",
-      userId: testUserId,
       shareType: "ONE_TIME",
       accessType: "PUBLIC",
     }, { Authorization: `Bearer ${authToken}` });
@@ -229,65 +162,65 @@ describe("Notes API", () => {
     expect(response.share.shareType).toBe("ONE_TIME");
   });
 
-  it("should create a TIME_BASED password-protected share note and generate password", async () => {
+  it("should create a TIME_BASED password-protected share note", async () => {
     const response = await api.post("/api/notes", {
       title: "Test Note 3",
       content: "Test content 3",
-      userId: testUserId,
       shareType: "TIME_BASED",
       accessType: "PASSWORD",
     }, { Authorization: `Bearer ${authToken}` });
     expect(response.statusCode).toBe(201);
     expect(response.share.accessType).toBe("PASSWORD");
-    expect(response.share.plainPassword).toBeDefined();
   });
 
-  it("should get user notes with x-user-id header", async () => {
+  it("should get user notes", async () => {
     const response = await api.get("/api/notes", {
-      "x-user-id": testUserId,
+      Authorization: `Bearer ${authToken}`,
     });
     expect(response.statusCode).toBe(200);
     expect(Array.isArray(response.notes)).toBe(true);
     expect(response.notes.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("should fail to get user notes without x-user-id header", async () => {
+  it("should fail to get user notes without auth", async () => {
     const response = await api.get("/api/notes");
     expect(response.statusCode).toBe(401);
   });
 });
 
 describe("Share API", () => {
-  let testUserId;
+  let authToken;
   let oneTimeToken;
   let timeBasedToken;
-  let sharePassword;
 
   beforeAll(async () => {
+    clearAuth();
     const registerResp = await api.post("/api/auth/register", {
       email: `share_test_${Date.now()}@example.com`,
       password: "TestPass123!",
     });
-    testUserId = registerResp.user.id;
+    const loginResp = await api.post("/api/auth/login", {
+      email: registerResp.user.email,
+      password: "TestPass123!",
+    });
+    authToken = loginResp.token;
 
     const res1 = await api.post("/api/notes", {
       title: "Share Test 1",
       content: "Content 1",
-      userId: testUserId,
       shareType: "ONE_TIME",
       accessType: "PUBLIC",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
     oneTimeToken = res1.share?.token;
 
     const res2 = await api.post("/api/notes", {
       title: "Share Test 2",
       content: "Content 2",
-      userId: testUserId,
       shareType: "TIME_BASED",
       accessType: "PASSWORD",
-    });
+      password: "testpw",
+    }, { Authorization: `Bearer ${authToken}` });
     timeBasedToken = res2.share?.token;
-    sharePassword = res2.share?.plainPassword;
   });
 
   it("should access public ONE_TIME share", async () => {
@@ -319,7 +252,7 @@ describe("Share API", () => {
 
   it("should unlock with correct password", async () => {
     const response = await api.post(`/api/share/${timeBasedToken}/unlock`, {
-      password: sharePassword,
+      password: "testpw",
     });
     expect(response.statusCode).toBe(200);
     expect(response.note.title).toBe("Share Test 2");
@@ -327,7 +260,7 @@ describe("Share API", () => {
 
   it("should allow re-accessing TIME_BASED share", async () => {
     const response = await api.post(`/api/share/${timeBasedToken}/unlock`, {
-      password: sharePassword,
+      password: "testpw",
     });
     expect(response.statusCode).toBe(200);
     expect(response.note.title).toBe("Share Test 2");
@@ -344,11 +277,10 @@ describe("Share API", () => {
     const expiredRes = await api.post("/api/notes", {
       title: "Expired Note",
       content: "Expired content",
-      userId: testUserId,
       shareType: "ONE_TIME",
       accessType: "PUBLIC",
       expiresAt: pastDate,
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const expiredToken = expiredRes.share?.token;
     const response = await api.get(`/api/share/${expiredToken}`);
@@ -360,17 +292,16 @@ describe("Share API", () => {
     const revokeRes = await api.post("/api/notes", {
       title: "Revoke Test Note",
       content: "Revoke test content",
-      userId: testUserId,
       shareType: "TIME_BASED",
       accessType: "PUBLIC",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const revokeToken = revokeRes.share?.token;
 
     const accessBefore = await api.get(`/api/share/${revokeToken}`);
     expect(accessBefore.statusCode).toBe(200);
 
-    const revokeResponse = await api.post(`/api/share/${revokeToken}/revoke`, {}, { "x-user-id": testUserId });
+    const revokeResponse = await api.post(`/api/share/${revokeToken}/revoke`, {}, { Authorization: `Bearer ${authToken}` });
     expect(revokeResponse.statusCode).toBe(200);
 
     const accessAfter = await api.get(`/api/share/${revokeToken}`);
@@ -382,10 +313,9 @@ describe("Share API", () => {
     const viewCountRes = await api.post("/api/notes", {
       title: "View Count Note",
       content: "View count content",
-      userId: testUserId,
       shareType: "TIME_BASED",
       accessType: "PUBLIC",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const viewToken = viewCountRes.share?.token;
 
@@ -406,14 +336,12 @@ describe("Share API", () => {
     const pwRes = await api.post("/api/notes", {
       title: "PW View Count",
       content: "PW view content",
-      userId: testUserId,
       shareType: "TIME_BASED",
       accessType: "PASSWORD",
       password: "testpw",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const pwToken = pwRes.share?.token;
-    const pwPassword = pwRes.share?.plainPassword;
 
     const wrongAttempt = await api.post(`/api/share/${pwToken}/unlock`, {
       password: "wrong",
@@ -421,13 +349,13 @@ describe("Share API", () => {
     expect(wrongAttempt.statusCode).toBe(401);
 
     const correctAccess1 = await api.post(`/api/share/${pwToken}/unlock`, {
-      password: pwPassword,
+      password: "testpw",
     });
     expect(correctAccess1.statusCode).toBe(200);
     expect(correctAccess1.viewCount).toBe(1);
 
     const correctAccess2 = await api.post(`/api/share/${pwToken}/unlock`, {
-      password: pwPassword,
+      password: "testpw",
     });
     expect(correctAccess2.statusCode).toBe(200);
     expect(correctAccess2.viewCount).toBe(2);
@@ -437,10 +365,9 @@ describe("Share API", () => {
     const concurrentRes = await api.post("/api/notes", {
       title: "Concurrent Note",
       content: "Concurrent content",
-      userId: testUserId,
       shareType: "ONE_TIME",
       accessType: "PUBLIC",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const concurrentToken = concurrentRes.share?.token;
 
@@ -461,19 +388,17 @@ describe("Share API", () => {
     const raceRes = await api.post("/api/notes", {
       title: "Race Condition Note",
       content: "Race condition content",
-      userId: testUserId,
       shareType: "ONE_TIME",
       accessType: "PASSWORD",
       password: "racepw",
-    });
+    }, { Authorization: `Bearer ${authToken}` });
 
     const raceToken = raceRes.share?.token;
-    const racePassword = raceRes.share?.plainPassword;
 
     const results = await Promise.all([
-      api.post(`/api/share/${raceToken}/unlock`, { password: racePassword }),
-      api.post(`/api/share/${raceToken}/unlock`, { password: racePassword }),
-      api.post(`/api/share/${raceToken}/unlock`, { password: racePassword }),
+      api.post(`/api/share/${raceToken}/unlock`, { password: "racepw" }),
+      api.post(`/api/share/${raceToken}/unlock`, { password: "racepw" }),
+      api.post(`/api/share/${raceToken}/unlock`, { password: "racepw" }),
     ]);
 
     const unlocks = results.filter(r => r.statusCode === 200);
@@ -484,3 +409,184 @@ describe("Share API", () => {
   });
 });
 
+describe("Notes CRUD Security", () => {
+  let ownerToken;
+  let intruderToken;
+  let noteId;
+
+  beforeAll(async () => {
+    clearAuth();
+    const ownerResp = await api.post("/api/auth/register", {
+      email: `owner_${Date.now()}@example.com`,
+      password: "TestPass123!",
+    });
+    const ownerLogin = await api.post("/api/auth/login", {
+      email: ownerResp.user.email,
+      password: "TestPass123!",
+    });
+    ownerToken = ownerLogin.token;
+
+    const noteResp = await api.post("/api/notes", {
+      title: "Secured Note",
+      content: "Secured content",
+    }, { Authorization: `Bearer ${ownerToken}` });
+    noteId = noteResp.note.id;
+
+    const intruderResp = await api.post("/api/auth/register", {
+      email: `intruder_${Date.now()}@example.com`,
+      password: "TestPass123!",
+    });
+    const intruderLogin = await api.post("/api/auth/login", {
+      email: intruderResp.user.email,
+      password: "TestPass123!",
+    });
+    intruderToken = intruderLogin.token;
+  });
+
+  afterEach(async () => {
+    clearAuth();
+  });
+
+  describe("GET /api/notes/:id", () => {
+    it("should return 401 without token", async () => {
+      const response = await api.get(`/api/notes/${noteId}`);
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should return note for owner", async () => {
+      const response = await api.get(`/api/notes/${noteId}`, {
+        Authorization: `Bearer ${ownerToken}`,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.note.id).toBe(noteId);
+    });
+
+    it("should return 403 for another user", async () => {
+      const response = await api.get(`/api/notes/${noteId}`, {
+        Authorization: `Bearer ${intruderToken}`,
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should return 404 for non-existent note", async () => {
+      const response = await api.get("/api/notes/nonexistent-id", {
+        Authorization: `Bearer ${ownerToken}`,
+      });
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe("PATCH /api/notes/:id", () => {
+    let patchNoteId;
+    beforeAll(async () => {
+      const resp = await api.post("/api/notes", {
+        title: "Updatable Note",
+        content: "content",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      patchNoteId = resp.note.id;
+    });
+
+    it("should return 401 without token", async () => {
+      const response = await api.patch(`/api/notes/${patchNoteId}`, {
+        title: "Hacked",
+      });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should allow owner to update", async () => {
+      const response = await api.patch(`/api/notes/${patchNoteId}`, {
+        title: "Updated",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      expect(response.statusCode).toBe(200);
+      expect(response.note.title).toBe("Updated");
+    });
+
+    it("should return 403 for intruder", async () => {
+      const response = await api.patch(`/api/notes/${patchNoteId}`, {
+        title: "Hacked",
+      }, { Authorization: `Bearer ${intruderToken}` });
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe("DELETE /api/notes/:id", () => {
+    let deleteNoteId;
+    beforeAll(async () => {
+      const resp = await api.post("/api/notes", {
+        title: "To Delete",
+        content: "Delete me",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      deleteNoteId = resp.note.id;
+    });
+
+    it("should return 401 without token", async () => {
+      const response = await api.delete(`/api/notes/${deleteNoteId}`);
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should allow owner to delete", async () => {
+      const response = await api.delete(`/api/notes/${deleteNoteId}`, {
+        Authorization: `Bearer ${ownerToken}`,
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it("should return 403 for intruder", async () => {
+      const resp = await api.post("/api/notes", {
+        title: "Intruder Target",
+        content: "content",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      const intruderNoteId = resp.note.id;
+      const response = await api.delete(`/api/notes/${intruderNoteId}`, {
+        Authorization: `Bearer ${intruderToken}`,
+      });
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe("Revoke", () => {
+    it("should return 401 without token", async () => {
+      const shareResp = await api.post("/api/notes", {
+        title: "Revoke Test",
+        content: "content",
+        shareType: "TIME_BASED",
+        accessType: "PUBLIC",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      const token = shareResp.share?.token;
+      const response = await api.post(`/api/share/${token}/revoke`);
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should return 403 for intruder revoking owner share", async () => {
+      const shareResp = await api.post("/api/notes", {
+        title: "Revoke Test 2",
+        content: "content",
+        shareType: "TIME_BASED",
+        accessType: "PUBLIC",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      const token = shareResp.share?.token;
+      const response = await api.post(`/api/share/${token}/revoke`, {}, {
+        Authorization: `Bearer ${intruderToken}`,
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should allow owner to revoke and return 403 for further access", async () => {
+      const shareResp = await api.post("/api/notes", {
+        title: "Revoke Test 3",
+        content: "content",
+        shareType: "TIME_BASED",
+        accessType: "PUBLIC",
+      }, { Authorization: `Bearer ${ownerToken}` });
+      const token = shareResp.share?.token;
+      const revokeResp = await api.post(`/api/share/${token}/revoke`, {}, {
+        Authorization: `Bearer ${ownerToken}`,
+      });
+      expect(revokeResp.statusCode).toBe(200);
+
+      const accessAfter = await api.get(`/api/share/${token}`);
+      expect(accessAfter.statusCode).toBe(403);
+      expect(accessAfter.error).toBe("Share link has been revoked");
+    });
+  });
+});

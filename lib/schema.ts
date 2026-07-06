@@ -13,7 +13,7 @@ export const loginSchema = z.object({
 export const createNoteSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
-  userId: z.string().cuid(),
+  userId: z.string().cuid().optional(),
   shareType: z.enum(["ONE_TIME", "TIME_BASED"]).optional(),
   accessType: z.enum(["PUBLIC", "PASSWORD"]).optional(),
   password: z.string().optional(),

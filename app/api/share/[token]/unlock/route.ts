@@ -67,6 +67,10 @@ export async function POST(
 
     const updatedShare = await shareRepo.findById(share.id);
 
+    if (!updatedShare) {
+      return Response.json({ error: "Internal server error" }, { status: 500 });
+    }
+
     const note = await noteRepo.findById(updatedShare.noteId);
 
     if (!note) {

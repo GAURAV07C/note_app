@@ -44,6 +44,7 @@ export class Repository {
         where: {
           noteId,
           isRevoked: false,
+          isUsed: false,
           OR: [
             { expiresAt: null },
             { expiresAt: { gt: new Date() } },

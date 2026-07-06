@@ -4,9 +4,15 @@ import { createNoteSchema } from "@/lib/schema";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import bcrypt from "bcrypt";
+import { getAuthenticatedUserId } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const result = createNoteSchema.safeParse(body);
 
@@ -17,10 +23,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, content, userId, shareType, accessType, password, expiresAt } =
+    const { title, content, shareType, accessType, password, expiresAt } =
       result.data;
 
-    let plainPassword = null;
+    let plainPassword: string | null = null;
     let shareData: Prisma.ShareCreateWithoutNoteInput | undefined = undefined;
 
     if (shareType && accessType) {
@@ -43,11 +49,11 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         content,
-        userId,
+        userId: userId,
         shares: shareData
           ? {
-            create: shareData,
-          }
+              create: shareData,
+            }
           : undefined,
       },
       include: {
@@ -64,7 +70,7 @@ export async function POST(request: NextRequest) {
     return Response.json(
       {
         note,
-        share: share ? { ...share, plainPassword } : null,
+        share: share ? { ...share } : null,
         shareLink,
       },
       { status: 201 }
@@ -75,10 +81,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get("x-user-id");
-
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

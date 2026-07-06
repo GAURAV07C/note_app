@@ -66,6 +66,10 @@ export async function GET(
 
     const updatedShare = await shareRepo.findById(share.id);
 
+    if (!updatedShare) {
+      return Response.json({ error: "Internal server error" }, { status: 500 });
+    }
+
     return Response.json(
       {
         note,
