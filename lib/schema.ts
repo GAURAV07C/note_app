@@ -27,7 +27,7 @@ export const updateNoteSchema = z.object({
 });
 
 export const createShareSchema = z.object({
-  noteId: z.string().cuid(),
+  noteId: z.string().cuid().optional(),
   shareType: z.enum(["ONE_TIME", "TIME_BASED"]),
   accessType: z.enum(["PUBLIC", "PASSWORD"]),
   password: z.string().optional(),

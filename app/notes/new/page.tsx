@@ -37,11 +37,30 @@ export default function NewNotePage() {
   const [generatedPassword, setGeneratedPassword] = useState("")
   const [copied, setCopied] = useState(false)
 
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    const array = new Uint8Array(12)
+    crypto.getRandomValues(array)
+    const newPassword = Array.from(array, (n) => chars[n % chars.length]).join("")
+    setPassword(newPassword)
+    setGeneratedPassword(newPassword)
+  }
+
+  const copyPassword = () => {
+    if (password) {
+      navigator.clipboard.writeText(password)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
     setShareLink("")
+    setGeneratedPassword("")
+    setCopied(false)
 
     const token = localStorage.getItem("token")
     if (!token) {
@@ -126,10 +145,10 @@ export default function NewNotePage() {
             )}
 
             {shareLink && (
-              <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-4 text-sm dark:bg-green-950 dark:border-green-800 dark:text-green-200">
-                <p className="mb-2 font-medium">Share link created successfully!</p>
-                <div className="flex items-center gap-2 mb-3">
-                  <code className="flex-1 rounded bg-background/80 px-2 py-1 text-xs break-all">
+              <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-4 text-sm">
+                <p className="mb-3 font-medium">Share link created successfully!</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <code className="flex-1 rounded-md border bg-background px-2 py-1.5 text-xs break-all">
                     {shareLink}
                   </code>
                   <Button
@@ -143,11 +162,24 @@ export default function NewNotePage() {
                   </Button>
                 </div>
                 {generatedPassword && (
-                  <div className="flex items-center gap-2 rounded bg-yellow-50 p-2 text-xs dark:bg-yellow-900/30 dark:text-yellow-200">
-                    <span className="font-medium">Password:</span>
-                    <code className="flex-1 rounded bg-background/80 px-2 py-1">
+                  <div className="flex items-center gap-2 rounded-md border bg-background p-2 text-xs">
+                    <span className="font-medium shrink-0">Password:</span>
+                    <code className="flex-1 rounded px-2 py-1">
                       {generatedPassword}
                     </code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedPassword)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      }}
+                      className="shrink-0"
+                    >
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -213,12 +245,23 @@ export default function NewNotePage() {
                       (leave blank for auto-generated)
                     </span>
                   </Label>
-                  <Input
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Optional password"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Optional password"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={password ? copyPassword : generatePassword}
+                      className="shrink-0"
+                    >
+                      {password && copied ? "Copied" : password ? "Copy" : "Generate"}
+                    </Button>
+                  </div>
                 </div>
               )}
 

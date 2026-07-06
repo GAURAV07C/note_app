@@ -9,13 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Card,
   CardContent,
   CardDescription,
@@ -25,18 +18,6 @@ import {
 import { ArrowLeft, Save } from "lucide-react"
 import AuthGuard from "@/components/shared/AuthGuard"
 
-type Note = {
-  id: string
-  title: string
-  content: string
-  createdAt: string
-  shares: Array<{
-    id: string
-    shareType: string
-    accessType: string
-    expiresAt: string | null
-  }>
-}
 
 export default function EditNotePage() {
   const params = useParams()
