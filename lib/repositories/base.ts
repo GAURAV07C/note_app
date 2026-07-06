@@ -21,6 +21,7 @@ export class Repository {
       prisma.note.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
+        include: { shares: true },
       }),
     findAll: (params?: Parameters<typeof prisma.note.findMany>[0]) =>
       prisma.note.findMany(params),
