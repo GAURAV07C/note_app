@@ -49,6 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 - **Database:** PostgreSQL with Prisma ORM
 - **Authentication:** NextAuth v5 (Credentials provider) + JWT
 - **UI Components:** shadcn/ui (Radix UI primitives)
+- **Rate Limiting / Caching:** Redis via ioredis
 
 ## Database Schema
 
@@ -207,7 +208,7 @@ This translates to `viewCount = viewCount + 1` in SQL, ensuring atomic increment
 
 ### How do you prevent two users from using a one-time link at the same time?
 
-We use an atomic `updateMany` with a conditional where clause:
+We use an atomic `updateMany` with a conditional where clause so only one request can succeed:
 
 ```typescript
 const updateResult = await prisma.share.updateMany({
@@ -216,29 +217,39 @@ const updateResult = await prisma.share.updateMany({
 });
 ```
 
-Only one query can succeed because the `where` clause matches at most one row. The second concurrent request gets `count === 0` and returns 403.
+The second concurrent request finds no matching row and receives 403.
 
 ### How do you update view count safely?
 
-We use Prisma's `{ increment: 1 }` operator, which translates to `viewCount = viewCount + 1` in SQL. This is an atomic operation at the database level, so concurrent updates are safe without explicit locking or transactions.
+We use Prisma's `{ increment: 1 }`, which becomes `viewCount = viewCount + 1` in SQL. This is atomic at the database level, so concurrent increments are safe without explicit locks.
 
 ### How would this work if 1 million people opened the link?
 
-The current design would struggle at that scale. For 1M concurrent opens, you would typically add:
-- A Redis cache layer to serve repeated reads without hitting the database
-- CDN caching for static note content
-- Read replicas for the PostgreSQL database
-- Asynchronous view-count updates via a message queue instead of writing on every request
+At that scale, you should layer caching and read scaling around the same share logic:
+- Put a **Redis** cache in front of share reads.
+- On `GET /share/{token}`, check cache first; if miss, read from Postgres then write-through to cache with a short TTL.
+- Use a **message queue** to persist view counts asynchronously instead of writing on every request.
+- Add **read replicas** for Postgres and put a **CDN** in front of static/public responses.
+- Keep the atomic one-time upgrade path so correctness does not depend on cache alone.
 
-### How would you prevent brute-force attempts on password-protected links?
+### How would you prevent brute-force attempts on password-protected links and normal login?
 
-Rate limiting per IP/token is the primary defense:
-- Limit to 5-10 attempts per minute per token or IP
-- Add exponential backoff after failed attempts
-- Consider CAPTCHA or challenge after repeated failures
-- Alert or temporarily lock access after sustained brute-force patterns
+Use **rate limiting** backed by **Redis** for both paths:
+- **Share unlock:** limit attempts per token + IP, e.g. 10/min.
+- **Login:** limit attempts per IP, e.g. 5/min.
+- On excess attempts, return 429 with a retry window.
+- Add exponential backoff and consider CAPTCHA after repeated failures.
 
-This is a high-priority missing piece in the current implementation.
+This project includes rate-limiting utilities using **ioredis** in `lib/rate-limit.ts` and applies IP-based limits to:
+- `POST /api/auth/login` — 5 attempts per minute per IP
+- `POST /api/share/{token}/unlock` — 10 attempts per minute per token+IP
+
+At scale, you can extend this with:
+- Distributed rate limiting via Redis sliding window
+- Geo-blocking or anomaly detection for suspicious patterns
+- Adaptive limits based on reputation
+
+This is a high-priority security control.
 
 ## API Endpoints
 

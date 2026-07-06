@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { shareRepo, noteRepo } from "@/lib/repositories";
 import prisma from "@/lib/prisma";
+import { enforceRateLimit, RateLimitError } from "@/lib/repositories/rate-limit";
+import { getIpAddress } from "@/lib/api-auth";
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +10,19 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
+    const ip = getIpAddress(request);
+
+    try {
+      await enforceRateLimit(`share:access:${token}:${ip}`, { limit: 30, window: 60, keyPrefix: "noteapp:ratelimit:share" });
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        return Response.json(
+          { error: `Too many requests. Try again in ${error.retryAfter} seconds.` },
+          { status: 429 }
+        );
+      }
+      throw error;
+    }
 
     const share = await shareRepo.findByToken(token);
 

@@ -1,9 +1,12 @@
+import { NextRequest } from "next/server";
 import { loginSchema } from "@/lib/schema";
 import { userRepo } from "@/lib/repositories/user";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { enforceRateLimit, RateLimitError } from "@/lib/repositories/rate-limit";
+import { getIpAddress } from "@/lib/api-auth";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const result = loginSchema.safeParse(body);
@@ -17,6 +20,21 @@ export async function POST(request: Request) {
 
     const email = result.data.email.trim().toLowerCase();
     const password = result.data.password;
+    const ip = getIpAddress(request)
+
+    try {
+      await enforceRateLimit(`login:${ip}`, { limit: 5, window: 60, keyPrefix: "noteapp:ratelimit:login" });
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        return Response.json(
+          { error: `Too many login attempts. Try again in ${error.retryAfter} seconds.` },
+          { status: 429 }
+        );
+      }
+      throw error;
+    }
+
+
 
     const user = await userRepo.findByEmail(email);
 
