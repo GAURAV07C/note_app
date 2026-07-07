@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
+import { parseLocalDateTime } from "@/lib/utils";
 
 // Naye note banane wala API endpoint
 // POST /api/notes - Login user ke liye nayi note create karta hai
@@ -49,18 +50,7 @@ export async function POST(request: NextRequest) {
 
       // Expiry date parse kar rahe hai
       if (expiresAt) {
-        const normalized = expiresAt.replace(" ", "T");
-        const formats = [normalized];
-        const ddMmYyyy = normalized.match(/^(\d{2})-(\d{2})-(\d{4})/);
-        if (ddMmYyyy) {
-          const [, dd, mm, yyyy] = ddMmYyyy;
-          formats.push(`${yyyy}-${mm}-${dd}${normalized.slice(10)}`);
-        }
-
-        const parsed = formats.map((value) => {
-          const date = new Date(value);
-          return Number.isNaN(date.getTime()) ? null : date;
-        }).find((date) => date !== null) ?? null;
+        const parsed = parseLocalDateTime(expiresAt);
 
         if (!parsed) {
           return Response.json(
