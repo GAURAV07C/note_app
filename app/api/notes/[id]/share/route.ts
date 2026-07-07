@@ -27,6 +27,7 @@ export async function POST(
         fieldErrors.length > 0
           ? fieldErrors.join(", ")
           : flattened.formErrors.join(", ") || "Invalid input";
+      console.error("DEBUG validation error:", message);
       return Response.json({ error: message }, { status: 400 });
     }
 
@@ -46,6 +47,7 @@ export async function POST(
       (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
     );
     if (activeShare) {
+      console.error("DEBUG activeShare error for noteId", id);
       return Response.json(
         { error: "Note already has an active share link. Revoke it first to create a new one." },
         { status: 400 }
@@ -110,8 +112,9 @@ export async function POST(
     return Response.json(
       {
         note: existingNote,
-        share: { ...newShare, plainPassword: plainPassword || undefined },
+        share: newShare,
         shareLink,
+        plainPassword: plainPassword || undefined,
       },
       { status: 201 }
     );
