@@ -33,8 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Calendar, Share2, Copy, Shield } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, FileText, Calendar, Share2, Copy } from "lucide-react";
 import AuthGuard from "@/components/shared/AuthGuard";
 
 // Note ka type definition
@@ -287,23 +286,7 @@ export default function NotePage() {
 
           <Card>
             <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <CardTitle className="text-2xl">{note.title}</CardTitle>
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline" className="capitalize">
-                  <Shield className="mr-1 h-3 w-3" />
-                  {note.shareType?.toLowerCase().replace("_", " ")}
-                </Badge>
-                <Badge variant="secondary" className="capitalize">
-                  {note.accessType?.toLowerCase()}
-                </Badge>
-              </div>
-            </div>
+            <CardTitle className="text-2xl">{note.title}</CardTitle>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <Button
                   size="sm"
