@@ -87,27 +87,29 @@ export function Navbar() {
 
         {/* Navigation links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <Link
-            href="/notes/new"
-            className={`transition-colors hover:text-foreground ${pathname === "/notes/new" ? "text-foreground" : ""}`}
-          >
-            Create Note
-          </Link>
           {isLoggedIn && (
-            <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+            <>
               <Link
-                href="/dashboard"
-                className={`transition-colors hover:text-foreground ${pathname === "/dashboard" ? "text-foreground" : ""}`}
+                href="/notes/new"
+                className={`transition-colors hover:text-foreground ${pathname === "/notes/new" ? "text-foreground" : ""}`}
               >
-                Dashboard
+                Create Note
               </Link>
-              <Link
-                href="/notes"
-                className={`transition-colors hover:text-foreground ${pathname === "/notes" ? "text-foreground" : ""}`}
-              >
-                Notes
-              </Link>
-            </div>
+              <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+                <Link
+                  href="/dashboard"
+                  className={`transition-colors hover:text-foreground ${pathname === "/dashboard" ? "text-foreground" : ""}`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/notes"
+                  className={`transition-colors hover:text-foreground ${pathname === "/notes" ? "text-foreground" : ""}`}
+                >
+                  Notes
+                </Link>
+              </div>
+            </>
           )}
         </nav>
 

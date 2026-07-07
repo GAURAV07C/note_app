@@ -2,7 +2,7 @@
 // User yahan nayi note create kar sakta hai
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,12 @@ export default function NewNotePage() {
   const [summaryError, setSummaryError] = useState("")
   const [createdNoteId, setCreatedNoteId] = useState<string | null>(null)
 
-  // Password generate karne wala function
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      router.push("/login")
+    }
+  }, [router])
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     const array = new Uint8Array(12)
