@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { noteRepo } from "@/lib/repositories";
 import { createNoteSchema } from "@/lib/schema";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
 
