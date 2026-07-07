@@ -38,6 +38,7 @@ model Note {
   id        String   @id @default(cuid())
   title     String
   content   String
+  constentSummary String?
 
   userId    String
   user      User     @relation(fields: [userId], references: [id])

@@ -17,6 +17,8 @@
     "jest-cli": "node node_modules/.pnpm/jest-cli@30.4.2_@types+node@20.19.43/node_modules/jest-cli/bin/jest.js"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.1",
+    "@langchain/groq": "^1.3.1",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-avatar": "^1.2.1",
     "@radix-ui/react-dialog": "^1.1.18",

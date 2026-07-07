@@ -64,6 +64,9 @@ export default function NotePage() {
   const [creatingShare, setCreatingShare] = useState(false)
   const [shareError, setShareError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [summary, setSummary] = useState("")
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -107,6 +110,40 @@ export default function NotePage() {
       navigator.clipboard.writeText(password)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleSummarize = async () => {
+    if (!note?.content || note.content.trim().length < 20) {
+      setSummaryError("Content is too short to summarize")
+      return
+    }
+
+    setSummaryError("")
+    setSummary("")
+    setSummaryLoading(true)
+
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/notes/${id}/summarize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setSummaryError(data.error || "Failed to generate summary")
+        return
+      }
+
+      setSummary(data.summary)
+    } catch {
+      setSummaryError("Something went wrong")
+    } finally {
+      setSummaryLoading(false)
     }
   }
 
@@ -239,6 +276,16 @@ export default function NotePage() {
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={handleSummarize}
+                  disabled={summaryLoading || !note?.content || note.content.trim().length < 20}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {summaryLoading ? "Summarizing..." : "Summarize"}
+                </Button>
+                <Button
+                  size="sm"
                   variant="default"
                   onClick={() => setShareDialogOpen(true)}
                   className="flex items-center gap-2"
@@ -252,7 +299,20 @@ export default function NotePage() {
                 Created: {new Date(note.createdAt).toLocaleString()}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {summaryError && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {summaryError}
+                </div>
+              )}
+              {summary && (
+                <div className="rounded-lg border bg-primary/5 p-4 text-sm">
+                  <p className="mb-1 font-medium text-primary">Summary</p>
+                  <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                    {summary}
+                  </p>
+                </div>
+              )}
               <div className="whitespace-pre-wrap text-sm leading-relaxed rounded-lg border bg-background/50 p-4">
                 {note.content}
               </div>

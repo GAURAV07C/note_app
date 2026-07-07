@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const ip = getIpAddress(request)
 
     try {
-      await enforceRateLimit(`login:${ip}`, { limit: 50, window: 60, keyPrefix: "noteapp:ratelimit:login" });
+      await enforceRateLimit(`login:${ip}`, { limit: 5, window: 60, keyPrefix: "noteapp:ratelimit:login" });
     } catch (error) {
       if (error instanceof RateLimitError) {
         return Response.json(

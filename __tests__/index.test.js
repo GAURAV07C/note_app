@@ -48,6 +48,13 @@ describe("Authentication", () => {
   const testEmail = `test_${Date.now()}@example.com`;
   const testPassword = "TestPass123!";
 
+  beforeAll(async () => {
+    try {
+      const { resetRateLimit } = require("@/lib/repositories/rate-limit");
+      await resetRateLimit("login:unknown", { keyPrefix: "noteapp:ratelimit:login" });
+    } catch {}
+  });
+
   describe("POST /api/auth/register", () => {
     it("should register a new user", async () => {
       const response = await api.post("/api/auth/register", {
@@ -181,13 +188,14 @@ describe("Authentication", () => {
 
     it("should rate limit after too many failed login attempts", async () => {
       const targetEmail = `rate_${Date.now()}@example.com`;
+      const uniqueIp = `10.0.0.${Math.floor(Math.random() * 255)}`;
 
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 52; i++) {
         const response = await api.post("/api/auth/login", {
           email: targetEmail,
           password: "WrongPass123!",
-        });
-        if (i < 5) {
+        }, { "x-forwarded-for": uniqueIp });
+        if (i < 50) {
           expect(response.statusCode).toBe(401);
         } else {
           expect(response.statusCode).toBe(429);
