@@ -46,7 +46,10 @@ export class Repository {
     update: (id: string, data: Parameters<typeof prisma.note.update>[0]["data"]) =>
       prisma.note.update({ where: { id }, data }),
     // Note delete karta hai
-    delete: (id: string) => prisma.note.delete({ where: { id } }),
+    delete: async (id: string) => {
+      await prisma.share.deleteMany({ where: { noteId: id } });
+      return prisma.note.delete({ where: { id } });
+    },
   };
 
   // Share related database operations
