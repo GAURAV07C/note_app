@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,17 +28,8 @@ export function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const [userEmail, setUserEmail] = useState("");
+  const userEmail = session?.user?.email || "";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (isLoggedIn && session?.user?.email) {
-      setUserEmail(session.user.email);
-    } else {
-      setUserEmail("");
-    }
-    setMobileMenuOpen(false);
-  }, [isLoggedIn, session]);
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/" });
