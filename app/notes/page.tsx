@@ -86,7 +86,7 @@ export default function NotesPage() {
   return (
     <div className="min-h-screen bg-muted/40 py-10 px-4">
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard">
@@ -109,7 +109,6 @@ export default function NotesPage() {
         </div>
 
         {notes.length === 0 ? (
-          // Agar koi note nahi hai to yeh UI dikhega
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -123,7 +122,6 @@ export default function NotesPage() {
             </CardContent>
           </Card>
         ) : (
-          // Notes list ka UI
           <div className="grid gap-4">
             {notes.map((note) => (
               <Link key={note.id} href={`/notes/${note.id}`}>

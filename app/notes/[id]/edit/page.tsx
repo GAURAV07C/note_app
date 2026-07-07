@@ -249,15 +249,15 @@ export default function EditNotePage() {
                   />
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <Button type="submit" className="flex-1" disabled={saving}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {saving ? "Saving..." : "Update Note"}
-                  </Button>
-                  <Button type="button" variant="outline" asChild>
-                    <Link href="/dashboard">Cancel</Link>
-                  </Button>
-                </div>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                <Button type="submit" className="flex-1" disabled={saving}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? "Saving..." : "Update Note"}
+                </Button>
+                <Button type="button" variant="outline" asChild>
+                  <Link href="/dashboard">Cancel</Link>
+                </Button>
+              </div>
               </form>
             </CardContent>
           </Card>

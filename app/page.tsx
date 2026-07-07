@@ -15,8 +15,8 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero section */}
-      <section className="flex-1 flex items-center justify-center px-4 py-20">
-        <div className="w-full max-w-4xl space-y-12 text-center">
+      <section className="flex-1 flex items-center justify-center px-4 py-12 sm:py-20">
+        <div className="w-full max-w-4xl space-y-8 sm:space-y-12 text-center">
           <div className="space-y-4">
             <div className="inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
               <Shield className="mr-2 h-3 w-3" />

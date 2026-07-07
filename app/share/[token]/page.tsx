@@ -131,7 +131,7 @@ export default function SharePage() {
   // Loading state ka UI
   if (loading && !data && !requiresPassword) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <Skeleton className="h-6 w-40" />
@@ -217,7 +217,7 @@ export default function SharePage() {
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle className="text-2xl">{data.note.title}</CardTitle>
               <div className="flex gap-2">
                 <Badge variant="outline" className="capitalize">
