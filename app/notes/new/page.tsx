@@ -23,7 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Copy, Check, ArrowLeft } from "lucide-react"
+import { Copy, Check, ArrowLeft, FileText } from "lucide-react"
 
 // New note page ka main component
 export default function NewNotePage() {
@@ -39,6 +39,9 @@ export default function NewNotePage() {
   const [shareLink, setShareLink] = useState("")
   const [generatedPassword, setGeneratedPassword] = useState("")
   const [copied, setCopied] = useState(false)
+  const [summary, setSummary] = useState("")
+  const [summaryError, setSummaryError] = useState("")
+  const [createdNoteId, setCreatedNoteId] = useState<string | null>(null)
 
   // Password generate karne wala function
   const generatePassword = () => {
@@ -59,6 +62,38 @@ export default function NewNotePage() {
     }
   }
 
+  // Note create hone ke baad summary generate karne wala function
+  const handleSummarize = async (noteId: string) => {
+    if (!content || content.trim().length < 20) {
+      setSummaryError("Content is too short to summarize")
+      return
+    }
+
+    setSummaryError("")
+    setSummary("")
+
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/notes/${noteId}/summarize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setSummaryError(data.error || "Failed to generate summary")
+        return
+      }
+
+      setSummary(data.summary)
+    } catch {
+      setSummaryError("Something went wrong")
+    }
+  }
+
   // Naye note ko save karne wala function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,6 +102,9 @@ export default function NewNotePage() {
     setShareLink("")
     setGeneratedPassword("")
     setCopied(false)
+    setSummary("")
+    setSummaryError("")
+    setCreatedNoteId(null)
 
     const token = localStorage.getItem("token")
     if (!token) {
@@ -100,14 +138,15 @@ export default function NewNotePage() {
         return
       }
 
+      const createdNoteId = data.note?.id
+      setCreatedNoteId(createdNoteId || null)
+
       if (data.shareLink) {
         setShareLink(data.shareLink)
         const plainPasswordFromResponse = data.plainPassword || data.share?.plainPassword
         if (plainPasswordFromResponse) {
           setGeneratedPassword(plainPasswordFromResponse)
         }
-      } else {
-        router.push("/notes")
       }
     } catch {
       setError("Something went wrong")
@@ -190,6 +229,35 @@ export default function NewNotePage() {
                     </Button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {summaryError && (
+              <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {summaryError}
+              </div>
+            )}
+
+            {createdNoteId && content.trim().length >= 20 && (
+              <div className="mb-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSummarize(createdNoteId)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {summary ? "Regenerate Summary" : "Summarize"}
+                </Button>
+              </div>
+            )}
+
+            {summary && (
+              <div className="mb-4 rounded-lg border bg-primary/5 p-4 text-sm">
+                <p className="mb-1 font-medium text-primary">Summary</p>
+                <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                  {summary}
+                </p>
               </div>
             )}
 

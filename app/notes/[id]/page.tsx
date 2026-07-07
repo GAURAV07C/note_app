@@ -37,69 +37,75 @@ import AuthGuard from "@/components/shared/AuthGuard";
 
 // Note ka type definition
 type Note = {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
+  id: string
+  title: string
+  content: string
+  constentSummary: string | null
+  createdAt: string
   shares: Array<{
-    id: string;
-    shareType: string;
-    accessType: string;
-    isRevoked: boolean;
-    expiresAt: string | null;
-  }>;
-};
+    id: string
+    shareType: string
+    accessType: string
+    isRevoked: boolean
+    expiresAt: string | null
+  }>
+}
 
 // Single note page ka main component
 export default function NotePage() {
-  const params = useParams();
-  const id = params.id as string;
-  const router = useRouter();
-  const [note, setNote] = useState<Note | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [shareLink, setShareLink] = useState("");
-  const [generatedPassword, setGeneratedPassword] = useState("");
-  const [shareType, setShareType] = useState("");
-  const [accessType, setAccessType] = useState("");
-  const [password, setPassword] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [creatingShare, setCreatingShare] = useState(false);
-  const [shareError, setShareError] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState("");
+  const params = useParams()
+  const id = params.id as string
+  const router = useRouter()
+  const [note, setNote] = useState<Note | null>(null)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [shareLink, setShareLink] = useState("")
+  const [generatedPassword, setGeneratedPassword] = useState("")
+  const [shareType, setShareType] = useState("")
+  const [accessType, setAccessType] = useState("")
+  const [password, setPassword] = useState("")
+  const [expiresAt, setExpiresAt] = useState("")
+  const [creatingShare, setCreatingShare] = useState(false)
+  const [shareError, setShareError] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [summary, setSummary] = useState("")
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
 
   // Component mount hone par note fetch kar rahe hai
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token")
         const res = await fetch(`/api/notes/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
+        })
 
-        const data = await res.json();
+        const data = await res.json()
 
         if (!res.ok) {
-          setError(data.error || "Failed to load note");
-          return;
+          setError(data.error || "Failed to load note")
+          return
         }
 
-        setNote(data.note);
-      } catch {
-        setError("Something went wrong");
-      } finally {
-        setLoading(false);
-      }
-    };
+        setNote(data.note)
 
-    fetchNote();
-  }, [id]);
+        // Agar note mein pehle se summary hai to use karo
+        if (data.note?.constentSummary) {
+          setSummary(data.note.constentSummary)
+        }
+      } catch {
+        setError("Something went wrong")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNote()
+  }, [id])
 
   // Password generate karne wala function
   const generatePassword = () => {

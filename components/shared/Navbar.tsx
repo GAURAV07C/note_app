@@ -94,19 +94,20 @@ export function Navbar() {
             Create Note
           </Link>
           {isLoggedIn && (
-            <div>
-
-            <Link
-              href="/dashboard"
-              className={`transition-colors hover:text-foreground ${pathname === "/dashboard" ? "text-foreground" : ""}`}
-            >
-              Dashboard
-            </Link>
-
-            
-
+            <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+              <Link
+                href="/dashboard"
+                className={`transition-colors hover:text-foreground ${pathname === "/dashboard" ? "text-foreground" : ""}`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/notes"
+                className={`transition-colors hover:text-foreground ${pathname === "/notes" ? "text-foreground" : ""}`}
+              >
+                Notes
+              </Link>
             </div>
-            
           )}
         </nav>
 
