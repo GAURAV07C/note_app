@@ -56,6 +56,9 @@ The Note-Taking App allows users to create, edit, and share notes securely. It s
 
 ## 🏗 System Architecture
 
+<details>
+<summary>View System Architecture</summary>
+
 ```mermaid
 graph TD
     A[Client Browser] --> B[Next.js Frontend]
@@ -83,6 +86,8 @@ graph TD
         E
     end
 ```
+
+</details>
 
 **Architecture Notes:**
 - **Serverless-ready:** All API routes are compatible with Vercel/Netlify deployment
@@ -217,6 +222,9 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 ### Entity Relationship Diagram
 
+<details>
+<summary>View Database Schema</summary>
+
 ```mermaid
 erDiagram
     User ||--o{ Note : "creates"
@@ -256,6 +264,8 @@ erDiagram
     }
 ```
 
+</details>
+
 ### Schema Explanation
 
 **User Model:**
@@ -285,6 +295,9 @@ erDiagram
 
 ## 🔑 Authentication Flow
 
+<details>
+<summary>View Authentication Flow</summary>
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -309,6 +322,8 @@ sequenceDiagram
     A-->>F: Return protected data
 ```
 
+</details>
+
 **Authentication Details:**
 - Uses NextAuth v5 with Credentials provider
 - JWT tokens expire after 24 hours
@@ -318,6 +333,9 @@ sequenceDiagram
 ---
 
 ## 🔗 Share Link Lifecycle
+
+<details>
+<summary>View Share Link Lifecycle</summary>
 
 ```mermaid
 stateDiagram-v2
@@ -342,6 +360,8 @@ stateDiagram-v2
         TIME_BASED: viewCount += 1
     end note
 ```
+
+</details>
 
 **Lifecycle Stages:**
 
@@ -738,6 +758,9 @@ Or register a new account via the `/register` page.
 
 ### How It Works
 
+<details>
+<summary>View AI Summarization Flow</summary>
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -756,6 +779,8 @@ sequenceDiagram
     A-->>F: Return summary
     F->>F: Display summary to user
 ```
+
+</details>
 
 ### Implementation Details
 
