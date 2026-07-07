@@ -4,6 +4,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 // AuthGuard props ka type
 type AuthGuardProps = {
@@ -14,21 +15,17 @@ type AuthGuardProps = {
 // AuthGuard component - children ko wrap karke protect karta hai
 export default function AuthGuard({ children, requireAuth = true }: AuthGuardProps) {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    // localStorage se token nikal rahe hai
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (status === "loading") return;
 
-    // Agar authentication required hai aur token nahi hai to login pe redirect
-    if (requireAuth && !token) {
+    if (requireAuth && !session?.user) {
       router.replace("/login");
-    } 
-    // Agar authentication not required hai aur token hai to dashboard pe redirect
-    else if (!requireAuth && token) {
+    } else if (!requireAuth && session?.user) {
       router.replace("/dashboard");
     }
-  }, [router, requireAuth]);
+  }, [router, requireAuth, session, status]);
 
-  // Children ko render kar rahe hai
   return <>{children}</>;
 }

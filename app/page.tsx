@@ -4,13 +4,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { PenLine, Shield, Clock, Share2, ArrowRight } from "lucide-react"
+import { Shield, Clock, Share2, ArrowRight } from "lucide-react"
 
 // Home page ka main component
 export default function Home() {

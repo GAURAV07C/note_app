@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -17,60 +18,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PenLine, LogOut, Plus, FileText } from "lucide-react";
 
-// Navbar component - app ke top par navigation bar
 export function Navbar() {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const [userEmail, setUserEmail] = useState("");
 
-  // Component mount hone par user info fetch kar rahe hai
   useEffect(() => {
-    let isMounted = true;
+    if (isLoggedIn && session?.user?.email) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUserEmail(session.user.email);
+    } else {
+      setUserEmail("");
+    }
+  }, [isLoggedIn, session]);
 
-    const run = async () => {
-      setTimeout(async () => {
-        if (!isMounted) return;
-        const token = localStorage.getItem("token");
-        setIsLoggedIn(!!token);
-
-        if (token) {
-          try {
-            const res = await fetch("/api/auth/me", {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            const data = await res.json();
-
-            if (res.ok && data.user?.email) {
-              setUserEmail(data.user.email);
-            } else {
-              setUserEmail("");
-            }
-          } catch {
-            setUserEmail("");
-          }
-        } else {
-          setUserEmail("");
-        }
-      }, 0);
-    };
-
-    run();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Logout karne wala function
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    setUserEmail("");
-    window.location.href = "/";
+    signOut({ callbackUrl: "/" });
   };
 
   // Navbar ka UI

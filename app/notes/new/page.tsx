@@ -3,6 +3,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -28,6 +29,7 @@ import { Copy, Check, ArrowLeft, FileText } from "lucide-react"
 // New note page ka main component
 export default function NewNotePage() {
   const router = useRouter()
+  const { status } = useSession()
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [shareType, setShareType] = useState("")
@@ -44,11 +46,10 @@ export default function NewNotePage() {
   const [createdNoteId, setCreatedNoteId] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
+    if (status === "unauthenticated") {
       router.push("/login")
     }
-  }, [router])
+  }, [status, router])
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     const array = new Uint8Array(12)
@@ -78,12 +79,8 @@ export default function NewNotePage() {
     setSummary("")
 
     try {
-      const token = localStorage.getItem("token")
       const res = await fetch(`/api/notes/${noteId}/summarize`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
 
       const data = await res.json()
@@ -111,12 +108,6 @@ export default function NewNotePage() {
     setSummaryError("")
     setCreatedNoteId(null)
 
-    const token = localStorage.getItem("token")
-    if (!token) {
-      router.push("/login")
-      return
-    }
-
     try {
       const body: Record<string, unknown> = {
         title,
@@ -131,7 +122,6 @@ export default function NewNotePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       })

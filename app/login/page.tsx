@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +20,6 @@ import {
 import { PenLine } from "lucide-react"
 import AuthGuard from "@/components/shared/AuthGuard"
 
-// Login page ka main component
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -27,30 +27,23 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Form submit hone par login request bhejne wala function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
-      // Login API ko call kar rahe hai
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || "Login failed")
+      if (result?.error) {
+        setError("Invalid email or password")
         return
       }
 
-      // Token ko localStorage mein save kar rahe hai
-      localStorage.setItem("token", data.token)
-      // Dashboard page pe redirect kar rahe hai
       router.push("/dashboard")
     } catch {
       setError("Something went wrong")

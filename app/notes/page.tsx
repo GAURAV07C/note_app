@@ -1,20 +1,21 @@
 // Notes list page component
 // User ki saari notes yahan list hoti hai
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, FileText, Plus } from "lucide-react"
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, FileText, Plus } from "lucide-react";
 
 // Note ka type definition
 type Note = {
@@ -26,42 +27,36 @@ type Note = {
 
 // Notes list page ka main component
 export default function NotesPage() {
-  const router = useRouter()
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const { status } = useSession();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Component mount hone par notes fetch kar rahe hai
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+
     const fetchNotes = async () => {
       try {
-        const token = localStorage.getItem("token")
-        if (!token) {
-          router.push("/login")
-          return
-        }
+        const res = await fetch("/api/notes");
 
-        const res = await fetch("/api/notes", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        const data = await res.json()
+        const data = await res.json();
 
         if (!res.ok) {
-          return
+          return;
         }
 
-        setNotes(data.notes || [])
+        setNotes(data.notes || []);
       } catch {
         // ignore
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchNotes()
-  }, [router])
+    fetchNotes();
+  }, [status, router]);
 
   // Loading state ka UI
   if (loading) {
@@ -84,7 +79,7 @@ export default function NotesPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Notes list page ka UI
@@ -151,5 +146,5 @@ export default function NotesPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

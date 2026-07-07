@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export default function NotePage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
+  const { status } = useSession()
   const [note, setNote] = useState<Note | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
@@ -73,39 +75,39 @@ export default function NotePage() {
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState("")
 
-  // Component mount hone par note fetch kar rahe hai
   useEffect(() => {
-    const fetchNote = async () => {
-      try {
-        const token = localStorage.getItem("token")
-        const res = await fetch(`/api/notes/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          setError(data.error || "Failed to load note")
-          return
-        }
-
-        setNote(data.note)
-
-        // Agar note mein pehle se summary hai to use karo
-        if (data.note?.constentSummary) {
-          setSummary(data.note.constentSummary)
-        }
-      } catch {
-        setError("Something went wrong")
-      } finally {
-        setLoading(false)
-      }
+    if (status === "unauthenticated") {
+      router.push("/login")
+      return
     }
 
-    fetchNote()
-  }, [id])
+    if (status === "authenticated") {
+      const fetchNote = async () => {
+        try {
+          const res = await fetch(`/api/notes/${id}`)
+
+          const data = await res.json()
+
+          if (!res.ok) {
+            setError(data.error || "Failed to load note")
+            return
+          }
+
+          setNote(data.note)
+
+          if (data.note?.constentSummary) {
+            setSummary(data.note.constentSummary)
+          }
+        } catch {
+          setError("Something went wrong")
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      fetchNote()
+    }
+  }, [id, status, router])
 
   // Password generate karne wala function
   const generatePassword = () => {
@@ -141,7 +143,6 @@ export default function NotePage() {
     setCreatingShare(true);
 
     try {
-      const token = localStorage.getItem("token");
       const body: Record<string, unknown> = {
         shareType: shareType && shareType !== "NONE" ? shareType : undefined,
         accessType:
@@ -154,7 +155,6 @@ export default function NotePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });
@@ -200,12 +200,8 @@ export default function NotePage() {
     setSummaryLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`/api/notes/${id}/summarize`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       const data = await res.json();

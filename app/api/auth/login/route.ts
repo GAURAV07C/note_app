@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { enforceRateLimit, RateLimitError } from "@/lib/repositories/rate-limit";
 import { getIpAddress } from "@/lib/api-auth";
+import { cookies } from "next/headers";
 
 // User login karne wala API endpoint
 // POST /api/auth/login - Email aur password se login karta hai
@@ -68,16 +69,23 @@ export async function POST(request: NextRequest) {
       expiresIn: "24h",
     });
 
-    // Step 6: User data aur token return kar rahe hai
+    const cookieStore = await cookies();
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24,
+      path: "/",
+    });
+
     return Response.json(
       {
         user: {
           id: user.id,
           email: user.email,
         },
-        token,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("LOGIN_ERROR:", error);

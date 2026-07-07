@@ -2,11 +2,8 @@ import { NextRequest } from "next/server";
 import { auth } from "./auth";
 import jwt from "jsonwebtoken";
 
-// Request se authenticated user ID nikalne wala helper function
-// Agar session ya JWT token valid hai to user ID return karta hai, warna null
 export async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
   try {
-    // Pehle NextAuth session check kar rahe hai
     const session = await auth();
     if (session?.user?.id) {
       return session.user.id;
@@ -15,22 +12,16 @@ export async function getAuthenticatedUserId(request: NextRequest): Promise<stri
     // NextAuth session check fail ho jaye to JWT pe fallback karenge
   }
 
-  // Request header se Bearer token nikal rahe hai
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
-    if (process.env.JWT_SECRET) {
-      try {
-        // JWT token verify kar rahe hai
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
-        return decoded.userId;
-      } catch {
-        // Agar token invalid hai to ignore kar denge
-      }
+  const sessionCookie = request.cookies.get("session")?.value;
+  if (sessionCookie && process.env.JWT_SECRET) {
+    try {
+      const decoded = jwt.verify(sessionCookie, process.env.JWT_SECRET) as { userId: string };
+      return decoded.userId;
+    } catch {
+      // Agar token invalid hai to ignore kar denge
     }
   }
 
-  // Koi bhi valid authentication nahi mila
   return null;
 }
 

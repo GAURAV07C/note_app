@@ -1,4 +1,5 @@
 import Navbar from "@/components/shared/Navbar"
+import Providers from "./providers"
 import "./globals.css"
 
 export const metadata = {
@@ -14,8 +15,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full bg-background text-foreground">
       <body className="min-h-screen flex flex-col antialiased">
-        <Navbar />
-        <main className="flex-1 container mx-auto p-4">{children}</main>
+        <Providers>
+          <Navbar />
+          <main className="flex-1 container mx-auto p-4">{children}</main>
+        </Providers>
       </body>
     </html>
   )

@@ -50,7 +50,7 @@ describe("Authentication", () => {
 
   beforeAll(async () => {
     try {
-      const { resetRateLimit } = require("@/lib/repositories/rate-limit");
+      const { resetRateLimit } = await import("@/lib/repositories/rate-limit");
       await resetRateLimit("login:unknown", { keyPrefix: "noteapp:ratelimit:login" });
     } catch {}
   });

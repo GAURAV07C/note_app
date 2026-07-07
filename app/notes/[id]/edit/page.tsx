@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ export default function EditNotePage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
+  const { status } = useSession()
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [loading, setLoading] = useState(true)
@@ -34,14 +36,14 @@ export default function EditNotePage() {
   const [summaryError, setSummaryError] = useState("")
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+
     const fetchNote = async () => {
       try {
-        const token = localStorage.getItem("token")
-        const res = await fetch(`/api/notes/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        const res = await fetch(`/api/notes/${id}`)
 
         const data = await res.json()
 
@@ -53,7 +55,6 @@ export default function EditNotePage() {
         setTitle(data.note.title)
         setContent(data.note.content)
 
-        // Agar note mein pehle se summary hai to use karo
         if (data.note?.constentSummary) {
           setSummary(data.note.constentSummary)
         }
@@ -65,9 +66,8 @@ export default function EditNotePage() {
     }
 
     fetchNote()
-  }, [id])
+  }, [id, status, router])
 
-  // Note ko summarize karne wala function
   const handleSummarize = async () => {
     if (!content || content.trim().length < 20) {
       setSummaryError("Content is too short to summarize")
@@ -78,12 +78,8 @@ export default function EditNotePage() {
     setSummaryLoading(true)
 
     try {
-      const token = localStorage.getItem("token")
       const res = await fetch(`/api/notes/${id}/summarize`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
 
       const data = await res.json()
@@ -108,12 +104,10 @@ export default function EditNotePage() {
     setSaving(true)
 
     try {
-      const token = localStorage.getItem("token")
       const res = await fetch(`/api/notes/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ title, content }),
       })

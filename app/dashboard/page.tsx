@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,6 +70,7 @@ type Share = {
 // Dashboard page ka main component
 export default function DashboardPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -79,20 +81,16 @@ export default function DashboardPage() {
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
   // Notes ko API se fetch karne wala function
   const reloadNotes = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch("/api/notes", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch("/api/notes");
 
       const data = await res.json();
 
@@ -125,7 +123,6 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Share link copy karne wala function
@@ -155,12 +152,10 @@ export default function DashboardPage() {
   const revokeShare = async (shareId: string) => {
     setRevoking(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`/api/notes/${shareId}/revoke`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ isRevoked: true }),
       });
@@ -184,12 +179,8 @@ export default function DashboardPage() {
   const deleteNote = async (noteId: string) => {
     setDeleting(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`/api/notes/${noteId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (!res.ok) {
