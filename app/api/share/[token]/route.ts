@@ -96,10 +96,13 @@ export async function GET(
       return Response.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    // Step 10: Note data return kar rahe hai
+    // Step 10: Note data return kar rahe hai with summary
     return Response.json(
       {
-        note,
+        note: {
+          ...note,
+          constentSummary: note.constentSummary,
+        },
         shareType: share.shareType,
         accessType: share.accessType,
         viewCount: updatedShare.viewCount,

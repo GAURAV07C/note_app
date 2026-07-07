@@ -25,6 +25,7 @@ type ShareInfo = {
     title: string;
     content: string;
     createdAt: string;
+    constentSummary?: string | null;
   };
   shareType: string;
   accessType: string;
@@ -242,6 +243,14 @@ export default function SharePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {data.note.constentSummary && (
+              <div className="mb-4 rounded-lg border bg-primary/5 p-4 text-sm">
+                <p className="mb-1 font-medium text-primary">Summary</p>
+                <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                  {data.note.constentSummary}
+                </p>
+              </div>
+            )}
             <div className="whitespace-pre-wrap text-sm leading-relaxed rounded-lg border bg-background/50 p-4">
               {data.note.content}
             </div>

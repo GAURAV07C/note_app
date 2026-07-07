@@ -133,10 +133,13 @@ export async function POST(
       return Response.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // Step 13: Note data return kar rahe hai
+    // Step 13: Note data return kar rahe hai with summary
     return Response.json(
       {
-        note,
+        note: {
+          ...note,
+          constentSummary: note.constentSummary,
+        },
         shareType: share.shareType,
         accessType: share.accessType,
         viewCount: updatedShare.viewCount,

@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, FileText } from "lucide-react"
 import AuthGuard from "@/components/shared/AuthGuard"
 
 
@@ -29,6 +29,9 @@ export default function EditNotePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [summary, setSummary] = useState("")
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -49,6 +52,11 @@ export default function EditNotePage() {
 
         setTitle(data.note.title)
         setContent(data.note.content)
+
+        // Agar note mein pehle se summary hai to use karo
+        if (data.note?.constentSummary) {
+          setSummary(data.note.constentSummary)
+        }
       } catch {
         setError("Something went wrong")
       } finally {
@@ -58,6 +66,40 @@ export default function EditNotePage() {
 
     fetchNote()
   }, [id])
+
+  // Note ko summarize karne wala function
+  const handleSummarize = async () => {
+    if (!content || content.trim().length < 20) {
+      setSummaryError("Content is too short to summarize")
+      return
+    }
+
+    setSummaryError("")
+    setSummaryLoading(true)
+
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/notes/${id}/summarize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setSummaryError(data.error || "Failed to generate summary")
+        return
+      }
+
+      setSummary(data.summary)
+    } catch {
+      setSummaryError("Something went wrong")
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,6 +123,11 @@ export default function EditNotePage() {
       if (!res.ok) {
         setError(data.error || "Failed to update note")
         return
+      }
+
+      // Note update hone ke baad summary regenerate kar rahe hai
+      if (content.trim().length >= 20) {
+        await handleSummarize()
       }
 
       setSuccess("Note updated successfully")
@@ -140,6 +187,49 @@ export default function EditNotePage() {
               {success && (
                 <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-200">
                   {success}
+                </div>
+              )}
+
+              {summaryError && (
+                <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {summaryError}
+                </div>
+              )}
+
+              {summary && (
+                <div className="mb-4 rounded-lg border bg-primary/5 p-4 text-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="mb-0 font-medium text-primary">Summary</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSummarize}
+                      disabled={summaryLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      {summaryLoading ? "Regenerating..." : "Regenerate Summary"}
+                    </Button>
+                  </div>
+                  <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                    {summary}
+                  </p>
+                </div>
+              )}
+
+              {content.trim().length >= 20 && !summary && (
+                <div className="mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSummarize}
+                    disabled={summaryLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {summaryLoading ? "Summarizing..." : "Summarize"}
+                  </Button>
                 </div>
               )}
 
