@@ -2,6 +2,8 @@
 
 > A secure note-sharing application with AI-powered summarization, built with Next.js, TypeScript, PostgreSQL, and Prisma.
 
+**Repository:** https://github.com/GAURAV07C/note_app.git
+
 ---
 
 ## 📌 Project Overview
@@ -161,7 +163,7 @@ note_app/
 
 1. **Clone the repository:**
 ```bash
-git clone <repository-url>
+git clone https://github.com/GAURAV07C/note_app.git
 cd note_app
 ```
 
@@ -647,6 +649,88 @@ X-RateLimit-Reset: 1709064000
 | Unauthorized note access | Returns 403 Forbidden |
 | Note not found | Returns 404 Not Found |
 | Rate limit exceeded | Returns 429 with retry-after seconds |
+
+---
+
+## 🧪 Testing
+
+### Test Coverage
+
+The project includes comprehensive API tests covering all major endpoints and edge cases:
+
+**Test Suites:**
+1. **Authentication** — Registration, login, session management, rate limiting
+2. **Notes API** — CRUD operations, authorization checks
+3. **Share API** — Public access, password protection, expiry, revocation, view counts
+4. **Rate Limiting** — Login brute-force protection, share unlock rate limits
+5. **Race Conditions** — Concurrent one-time link access, parallel unlock attempts
+6. **Security** — Unauthorized access prevention, token validation
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+```
+
+### Test Scenarios Covered
+
+| Category | Test Cases |
+|----------|-----------|
+| **Authentication** | Register new user, duplicate email, invalid email, short password, missing fields, login with correct/wrong credentials, non-existent email, rate limiting after 50 failed attempts, rate limit reset on success |
+| **Notes CRUD** | Create note, get user notes, get note by ID, update note, delete note, unauthorized access (401/403), non-existent note (404) |
+| **Share Public Access** | Access public share without auth, password-protected share requires password, unlock with correct/wrong password, rate limit after 10 wrong attempts, invalid token (404), expired share (410), revoked share (403), one-time share already used (403) |
+| **Share Creation** | Create share for existing note, password-protected share, duplicate active share prevention, unauthorized share creation |
+| **View Count** | Increment on public access, increment on successful password unlock, no increment on wrong password, no increment on expired/revoked links, multiple accesses accumulate correctly |
+| **Race Conditions** | Concurrent access to ONE_TIME public share (only 1 succeeds), concurrent password unlocks for ONE_TIME share (only 1 succeeds) |
+| **Revoke** | Revoke without auth (401), intruder revoking owner share (403), owner revoke succeeds (200), access after revoke (403) |
+
+### Example Test Output
+
+```bash
+PASS  __tests__/index.test.js
+  Authentication
+    POST /api/auth/register
+      ✓ should register a new user (45ms)
+      ✓ should return 409 for duplicate email (12ms)
+      ✓ should return 400 for invalid email (8ms)
+    POST /api/auth/login
+      ✓ should login with correct credentials (52ms)
+      ✓ should return 401 for wrong password (15ms)
+      ✓ should rate limit after too many failed login attempts (3.2s)
+  Notes API
+    ✓ should create a note without share settings (28ms)
+    ✓ should create a ONE_TIME public share note (35ms)
+    ✓ should get user notes (18ms)
+  Share API
+    ✓ should access public ONE_TIME share (22ms)
+    ✓ should fail to access used ONE_TIME share (19ms)
+    ✓ should require password for PASSWORD accessType share (15ms)
+    ✓ should handle concurrent access to ONE_TIME share correctly (45ms)
+    ✓ should increment view count for public TIME_BASED share (67ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       45 passed, 45 total
+```
+
+### Test Credentials
+
+For manual UI/API testing, you can use these pre-seeded test credentials:
+
+```
+Email: test@example.com
+Password: Test@123Test
+```
+
+> **Note:** If the account does not exist yet, run the seed script first:
+> ```bash
+> pnpm tsx scripts/seed-test-user.ts
+> ```
+
+Or register a new account via the `/register` page.
 
 ---
 
