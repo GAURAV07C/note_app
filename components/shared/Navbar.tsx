@@ -1,3 +1,5 @@
+// Navbar component
+// App ke top par navigation bar dikhata hai
 "use client";
 
 import Link from "next/link";
@@ -15,11 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PenLine, LogOut, Plus, FileText } from "lucide-react";
 
+// Navbar component - app ke top par navigation bar
 export function Navbar() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
 
+  // Component mount hone par user info fetch kar rahe hai
   useEffect(() => {
     let isMounted = true;
 
@@ -61,6 +65,7 @@ export function Navbar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Logout karne wala function
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
@@ -68,9 +73,11 @@ export function Navbar() {
     window.location.href = "/";
   };
 
+  // Navbar ka UI
   return (
     <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        {/* Logo and brand name */}
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <PenLine className="h-4 w-4" />
@@ -78,6 +85,7 @@ export function Navbar() {
           <span className="text-xl font-bold tracking-tight">Note App</span>
         </Link>
 
+        {/* Navigation links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           <Link
             href="/notes/new"
@@ -86,17 +94,26 @@ export function Navbar() {
             Create Note
           </Link>
           {isLoggedIn && (
+            <div>
+
             <Link
               href="/dashboard"
               className={`transition-colors hover:text-foreground ${pathname === "/dashboard" ? "text-foreground" : ""}`}
             >
               Dashboard
             </Link>
+
+            
+
+            </div>
+            
           )}
         </nav>
 
+        {/* Auth buttons or user menu */}
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
+            // Logged in user ke liye dropdown menu
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -149,6 +166,7 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
+            // Guest user ke liye login and register buttons
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild className="hidden sm:inline-flex">
                 <Link href="/login">Login</Link>

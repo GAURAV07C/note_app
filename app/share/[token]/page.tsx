@@ -1,3 +1,5 @@
+// Share page component
+// Share link ke through note view karne ke liye page
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Lock, Eye, Calendar, Shield } from "lucide-react";
 
+// Share info ka type definition
 type ShareInfo = {
   note: {
     id: string;
@@ -28,6 +31,7 @@ type ShareInfo = {
   viewCount?: number;
 };
 
+// Share page ka main component
 export default function SharePage() {
   const params = useParams();
   const token = params.token as string;
@@ -38,6 +42,7 @@ export default function SharePage() {
   const [loading, setLoading] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
 
+  // Share data fetch karne wala function
   const fetchShare = async () => {
     setLoading(true);
     setError("");
@@ -69,11 +74,11 @@ export default function SharePage() {
     }
   };
 
+  // Component mount hone par share data fetch kar rahe hai
   useEffect(() => {
     let isMounted = true;
 
     const run = async () => {
-      // Avoid state updates synchronously during the effect phase.
       setTimeout(async () => {
         if (!isMounted) return;
         await fetchShare();
@@ -85,9 +90,10 @@ export default function SharePage() {
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Password protected share unlock karne wala function
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -121,6 +127,7 @@ export default function SharePage() {
     }
   };
 
+  // Loading state ka UI
   if (loading && !data && !requiresPassword) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -139,6 +146,7 @@ export default function SharePage() {
     );
   }
 
+  // Error state ka UI
   if (error && !requiresPassword && !data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -156,6 +164,7 @@ export default function SharePage() {
     );
   }
 
+  // Password required state ka UI
   if (requiresPassword) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -196,10 +205,12 @@ export default function SharePage() {
     );
   }
 
+  // Note na milne par null return kar rahe hai
   if (!data) {
     return null;
   }
 
+  // Note view karne ka UI
   return (
     <div className="min-h-screen bg-muted/40 py-10 px-4">
       <div className="mx-auto max-w-2xl">

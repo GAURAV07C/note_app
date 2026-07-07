@@ -1,3 +1,5 @@
+// Login page component
+// User email aur password se login kar sakta hai
 "use client"
 
 import { useState } from "react"
@@ -17,6 +19,7 @@ import {
 import { PenLine } from "lucide-react"
 import AuthGuard from "@/components/shared/AuthGuard"
 
+// Login page ka main component
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -24,12 +27,14 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // Form submit hone par login request bhejne wala function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
+      // Login API ko call kar rahe hai
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,7 +48,9 @@ export default function LoginPage() {
         return
       }
 
+      // Token ko localStorage mein save kar rahe hai
       localStorage.setItem("token", data.token)
+      // Dashboard page pe redirect kar rahe hai
       router.push("/dashboard")
     } catch {
       setError("Something went wrong")
@@ -52,6 +59,7 @@ export default function LoginPage() {
     }
   }
 
+  // Login page ka UI
   return (
     <AuthGuard requireAuth={false}>
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">

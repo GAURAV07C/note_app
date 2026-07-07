@@ -1,15 +1,21 @@
+// Rate limiting utility
+// Redis ke through API requests par rate limit enforce karta hai
 import { getRedis } from "@/lib/redis";
 
+// Rate limit configuration ka type
 export type RateLimitConfig = {
   limit: number;
   window: number;
   keyPrefix?: string;
 };
 
+// Default rate limit values
 const DEFAULT_KEY_PREFIX = "noteapp:ratelimit";
 const DEFAULT_LIMIT = 5;
 const DEFAULT_WINDOW = 60;
 
+// Rate limit reset karne wala function
+// Kisi bhi identifier ke liye stored rate limit clear kar deta hai
 export async function resetRateLimit(
   identifier: string,
   config?: RateLimitConfig,
@@ -24,6 +30,8 @@ export async function resetRateLimit(
   }
 }
 
+// Rate limit check karne wala function
+// Request allowed hai ya nahi yeh batata hai
 export async function checkRateLimit(
   identifier: string,
   config?: RateLimitConfig,
@@ -39,6 +47,7 @@ export async function checkRateLimit(
     const windowStart = now - window;
     const uniqueMemberId = `${Date.now()}-${Math.random()}`;
 
+    // Redis sorted set use karke sliding window implement kar rahe hai
     const multi = client.multi();
     multi.zremrangebyscore(key, 0, windowStart);
     multi.zadd(key, now, uniqueMemberId);
@@ -78,6 +87,8 @@ export async function checkRateLimit(
   }
 }
 
+// Rate limit enforce karne wala function
+// Agar limit cross ho jaye to error throw karta hai
 export async function enforceRateLimit(
   identifier: string,
   config?: RateLimitConfig,
@@ -91,6 +102,7 @@ export async function enforceRateLimit(
   }
 }
 
+// Rate limit exceed ho jane par throw hone wala custom error class
 export class RateLimitError extends Error {
   retryAfter: number;
 

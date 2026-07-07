@@ -1,3 +1,5 @@
+// Home page component
+// Landing page jahan user app ke features dekh sakta hai
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,9 +12,11 @@ import {
 } from "@/components/ui/card"
 import { PenLine, Shield, Clock, Share2, ArrowRight } from "lucide-react"
 
+// Home page ka main component
 export default function Home() {
   return (
     <div className="flex flex-col">
+      {/* Hero section */}
       <section className="flex-1 flex items-center justify-center px-4 py-20">
         <div className="w-full max-w-4xl space-y-12 text-center">
           <div className="space-y-4">
@@ -29,6 +33,7 @@ export default function Home() {
             </p>
           </div>
 
+          {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="lg" className="h-12 px-8">
               <Link href="/register" className="flex items-center gap-2">
@@ -40,6 +45,7 @@ export default function Home() {
             </Button>
           </div>
 
+          {/* Features cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
             <Card>
               <CardHeader>

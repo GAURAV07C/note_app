@@ -1,9 +1,13 @@
+// NextAuth configuration file - duplicate/index entry
+// Yeh file NextAuth ko setup karti hai authentication ke liye
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { userRepo } from "@/lib/repositories/user";
 
+// NextAuth configuration export kar rahe hai
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Step 1: Credentials provider configure kar rahe hai
   providers: [
     Credentials({
       name: "credentials",
@@ -11,6 +15,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+      // Step 2: Email aur password verify karne wala function
       authorize: async (credentials) => {
         const email = (credentials?.email as string)?.trim().toLowerCase();
         const password = (credentials?.password as string) || "";
@@ -30,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  // Step 3: JWT token aur session callbacks configure kar rahe hai
   callbacks: {
     async jwt({ token, user }) {
       if (user) token.id = user.id;
@@ -40,7 +46,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
+  // Step 4: JWT strategy use kar rahe hai session ke liye
   session: { strategy: "jwt" },
+  // Step 5: Custom login page set kar rahe hai
   pages: {
     signIn: "/login",
   },

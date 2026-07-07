@@ -6,17 +6,22 @@ import { Prisma } from "@/app/generated/prisma/client";
 import bcrypt from "bcrypt";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
 
+// Naye note banane wala API endpoint
+// POST /api/notes - Login user ke liye nayi note create karta hai
 export async function POST(request: NextRequest) {
   try {
+    // Step 1: Request se user ID nikalna hai
     const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Step 2: Request body se data parse kar rahe hai
     const body = await request.json();
     const result = createNoteSchema.safeParse(body);
 
     if (!result.success) {
+      // Agar validation fail ho jaye to error return kar denge
       const flattened = result.error.flatten();
       const fieldErrors = Object.values(flattened.fieldErrors).flat().filter(Boolean);
       const message = fieldErrors.length > 0 ? fieldErrors.join(", ") : flattened.formErrors.join(", ") || "Invalid input";
@@ -29,9 +34,11 @@ export async function POST(request: NextRequest) {
     const { title, content, shareType, accessType, password, expiresAt } =
       result.data;
 
+    // Step 3: Share settings ke liye variables initialize kar rahe hai
     let plainPassword: string | null = null;
     let shareData: Prisma.ShareCreateWithoutNoteInput | undefined = undefined;
 
+    // Agar share settings di gayi hai to process karenge
     const resolvedShareType = shareType || (accessType ? "TIME_BASED" : undefined);
 
     if (resolvedShareType && accessType) {
@@ -40,6 +47,7 @@ export async function POST(request: NextRequest) {
         accessType,
       };
 
+      // Expiry date parse kar rahe hai
       if (expiresAt) {
         const normalized = expiresAt.replace(" ", "T");
         const formats = [normalized];
@@ -63,12 +71,14 @@ export async function POST(request: NextRequest) {
         shareData.expiresAt = parsed;
       }
 
+      // Password type share ke liye hash generate kar rahe hai
       if (accessType === "PASSWORD") {
         plainPassword = password || Math.random().toString(36).slice(-12);
         shareData.passwordHash = await bcrypt.hash(plainPassword, 10);
       }
     }
 
+    // Step 4: Note database mein create kar rahe hai
     const note = await prisma.note.create({
       data: {
         title,
@@ -87,6 +97,7 @@ export async function POST(request: NextRequest) {
 
     const share = note.shares?.[0] || null;
 
+    // Step 5: Share link generate kar rahe hai
     const shareLink = share
       ? `${request.nextUrl.origin}/share/${share.token}`
       : null;
@@ -106,14 +117,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// User ke saare notes fetch karne wala API endpoint
+// GET /api/notes - Login user ki saari notes return karta hai
 export async function GET(request: NextRequest) {
   try {
+    // Step 1: User ID verify kar rahe hai
     const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Step 2: Database se user ki saari notes fetch kar rahe hai
     const notes = await noteRepo.findByUserId(userId);
 
     return Response.json({ notes }, { status: 200 });

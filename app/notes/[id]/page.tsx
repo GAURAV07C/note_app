@@ -1,9 +1,11 @@
-"use client"
+// Single note page component
+// User ek specific note ko dekh sakta hai, share kar sakta hai aur summarize kar sakta hai
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,17 +13,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -29,141 +31,118 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { ArrowLeft, FileText, Calendar, Share2, Copy } from "lucide-react"
-import AuthGuard from "@/components/shared/AuthGuard"
+} from "@/components/ui/dialog";
+import { ArrowLeft, FileText, Calendar, Share2, Copy } from "lucide-react";
+import AuthGuard from "@/components/shared/AuthGuard";
 
+// Note ka type definition
 type Note = {
-  id: string
-  title: string
-  content: string
-  createdAt: string
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
   shares: Array<{
-    id: string
-    shareType: string
-    accessType: string
-    isRevoked: boolean
-    expiresAt: string | null
-  }>
-}
+    id: string;
+    shareType: string;
+    accessType: string;
+    isRevoked: boolean;
+    expiresAt: string | null;
+  }>;
+};
 
+// Single note page ka main component
 export default function NotePage() {
-  const params = useParams()
-  const id = params.id as string
-  const router = useRouter()
-  const [note, setNote] = useState<Note | null>(null)
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [shareLink, setShareLink] = useState("")
-  const [generatedPassword, setGeneratedPassword] = useState("")
-  const [shareType, setShareType] = useState("")
-  const [accessType, setAccessType] = useState("")
-  const [password, setPassword] = useState("")
-  const [expiresAt, setExpiresAt] = useState("")
-  const [creatingShare, setCreatingShare] = useState(false)
-  const [shareError, setShareError] = useState("")
-  const [copied, setCopied] = useState(false)
-  const [summary, setSummary] = useState("")
-  const [summaryLoading, setSummaryLoading] = useState(false)
-  const [summaryError, setSummaryError] = useState("")
+  const params = useParams();
+  const id = params.id as string;
+  const router = useRouter();
+  const [note, setNote] = useState<Note | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareLink, setShareLink] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [shareType, setShareType] = useState("");
+  const [accessType, setAccessType] = useState("");
+  const [password, setPassword] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [creatingShare, setCreatingShare] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
 
+  // Component mount hone par note fetch kar rahe hai
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("token");
         const res = await fetch(`/api/notes/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        })
+        });
 
-        const data = await res.json()
+        const data = await res.json();
 
         if (!res.ok) {
-          setError(data.error || "Failed to load note")
-          return
+          setError(data.error || "Failed to load note");
+          return;
         }
 
-        setNote(data.note)
+        setNote(data.note);
       } catch {
-        setError("Something went wrong")
+        setError("Something went wrong");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchNote()
-  }, [id])
+    fetchNote();
+  }, [id]);
 
+  // Password generate karne wala function
   const generatePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    const array = new Uint8Array(12)
-    crypto.getRandomValues(array)
-    const newPassword = Array.from(array, (n) => chars[n % chars.length]).join("")
-    setPassword(newPassword)
-    setGeneratedPassword(newPassword)
-  }
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const array = new Uint8Array(12);
+    crypto.getRandomValues(array);
+    const newPassword = Array.from(array, (n) => chars[n % chars.length]).join(
+      "",
+    );
+    setPassword(newPassword);
+    setGeneratedPassword(newPassword);
+  };
 
+  // Password copy karne wala function
   const copyPassword = () => {
     if (password) {
-      navigator.clipboard.writeText(password)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-  }
+  };
 
-  const handleSummarize = async () => {
-    if (!note?.content || note.content.trim().length < 20) {
-      setSummaryError("Content is too short to summarize")
-      return
-    }
-
-    setSummaryError("")
-    setSummary("")
-    setSummaryLoading(true)
-
-    try {
-      const token = localStorage.getItem("token")
-      const res = await fetch(`/api/notes/${id}/summarize`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setSummaryError(data.error || "Failed to generate summary")
-        return
-      }
-
-      setSummary(data.summary)
-    } catch {
-      setSummaryError("Something went wrong")
-    } finally {
-      setSummaryLoading(false)
-    }
-  }
-
+  // Check karta hai ki active share link hai ya nahi
   const hasActiveShare = note?.shares?.some(
-    (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
-  )
+    (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date()),
+  );
 
+  // Note ko share karne wala function
   const handleCreateShare = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setShareError("")
-    setCreatingShare(true)
+    e.preventDefault();
+    setShareError("");
+    setCreatingShare(true);
 
     try {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("token");
       const body: Record<string, unknown> = {
         shareType: shareType && shareType !== "NONE" ? shareType : undefined,
-        accessType: accessType && accessType !== "NONE" ? accessType : undefined,
+        accessType:
+          accessType && accessType !== "NONE" ? accessType : undefined,
         password: accessType === "PASSWORD" && password ? password : undefined,
         expiresAt: expiresAt || undefined,
-      }
+      };
 
       const res = await fetch(`/api/notes/${id}/share`, {
         method: "POST",
@@ -172,36 +151,73 @@ export default function NotePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        setShareError(data.error || "Failed to create share link")
-        return
+        setShareError(data.error || "Failed to create share link");
+        return;
       }
 
-      setShareLink(data.shareLink)
-      const plainPasswordFromResponse = data.share?.plainPassword || data.plainPassword
+      setShareLink(data.shareLink);
+      const plainPasswordFromResponse =
+        data.share?.plainPassword || data.plainPassword;
       if (plainPasswordFromResponse) {
-        setGeneratedPassword(plainPasswordFromResponse)
+        setGeneratedPassword(plainPasswordFromResponse);
       }
-      setShareDialogOpen(false)
+      setShareDialogOpen(false);
       setNote((prev) =>
         prev
           ? {
               ...prev,
               shares: prev.shares ? [...prev.shares, data.share] : [data.share],
             }
-          : prev
-      )
+          : prev,
+      );
     } catch {
-      setShareError("Something went wrong")
+      setShareError("Something went wrong");
     } finally {
-      setCreatingShare(false)
+      setCreatingShare(false);
     }
-  }
+  };
 
+  // Note ko Groq AI se summarize karne wala function
+  const handleSummarize = async () => {
+    if (!note?.content || note.content.trim().length < 20) {
+      setSummaryError("Content is too short to summarize");
+      return;
+    }
+
+    setSummaryError("");
+    setSummary("");
+    setSummaryLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/notes/${id}/summarize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSummaryError(data.error || "Failed to generate summary");
+        return;
+      }
+
+      setSummary(data.summary);
+    } catch {
+      setSummaryError("Something went wrong");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  // Loading state ka UI
   if (loading) {
     return (
       <div className="min-h-screen bg-muted/40 py-10 px-4">
@@ -225,9 +241,10 @@ export default function NotePage() {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
+  // Error state ka UI
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -245,13 +262,15 @@ export default function NotePage() {
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
+  // Note na milne par null return kar rahe hai
   if (!note) {
-    return null
+    return null;
   }
 
+  // Note page ka main UI
   return (
     <AuthGuard requireAuth>
       <div className="min-h-screen bg-muted/40 py-10 px-4">
@@ -278,7 +297,11 @@ export default function NotePage() {
                   size="sm"
                   variant="outline"
                   onClick={handleSummarize}
-                  disabled={summaryLoading || !note?.content || note.content.trim().length < 20}
+                  disabled={
+                    summaryLoading ||
+                    !note?.content ||
+                    note.content.trim().length < 20
+                  }
                   className="flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
@@ -319,12 +342,14 @@ export default function NotePage() {
             </CardContent>
           </Card>
 
+          {/* Share link create karne ka dialog */}
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Share Note</DialogTitle>
                 <DialogDescription>
-                  Create a share link for this note. Choose share type and access options.
+                  Create a share link for this note. Choose share type and
+                  access options.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateShare} className="space-y-4">
@@ -360,7 +385,9 @@ export default function NotePage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigator.clipboard.writeText(generatedPassword)}
+                          onClick={() =>
+                            navigator.clipboard.writeText(generatedPassword)
+                          }
                           className="shrink-0"
                         >
                           <Copy className="h-4 w-4" />
@@ -395,33 +422,37 @@ export default function NotePage() {
                     </SelectContent>
                   </Select>
                 </div>
-              {accessType === "PASSWORD" && (
-                <div className="space-y-2">
-                  <Label htmlFor="share-password">
-                    Password{" "}
-                    <span className="text-muted-foreground font-normal">
-                      (leave blank for auto-generated)
-                    </span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="share-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Optional password"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={password ? copyPassword : generatePassword}
-                      className="shrink-0"
-                    >
-                      {password && copied ? "Copied" : password ? "Copy" : "Generate"}
-                    </Button>
+                {accessType === "PASSWORD" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="share-password">
+                      Password{" "}
+                      <span className="text-muted-foreground font-normal">
+                        (leave blank for auto-generated)
+                      </span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="share-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Optional password"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={password ? copyPassword : generatePassword}
+                        className="shrink-0"
+                      >
+                        {password && copied
+                          ? "Copied"
+                          : password
+                            ? "Copy"
+                            : "Generate"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
                 {shareType === "TIME_BASED" && (
                   <div className="space-y-2">
                     <Label htmlFor="share-expires">Expires At</Label>
@@ -438,18 +469,25 @@ export default function NotePage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setShareDialogOpen(false)
-                      setShareLink("")
-                      setGeneratedPassword("")
-                      setPassword("")
-                      setShareError("")
-                      setCopied(false)
+                      setShareDialogOpen(false);
+                      setShareLink("");
+                      setGeneratedPassword("");
+                      setPassword("");
+                      setShareError("");
+                      setCopied(false);
                     }}
                     disabled={creatingShare}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={creatingShare || shareType === "NONE" || accessType === "NONE"}>
+                  <Button
+                    type="submit"
+                    disabled={
+                      creatingShare ||
+                      shareType === "NONE" ||
+                      accessType === "NONE"
+                    }
+                  >
                     {creatingShare ? "Creating..." : "Create Share Link"}
                   </Button>
                 </DialogFooter>
@@ -459,5 +497,5 @@ export default function NotePage() {
         </div>
       </div>
     </AuthGuard>
-  )
+  );
 }

@@ -1,3 +1,5 @@
+// Dashboard page component
+// User ki saare notes aur unke share links yahan manage kar sakta hai
 "use client";
 
 import { useEffect, useState } from "react";
@@ -42,6 +44,7 @@ import {
 } from "lucide-react";
 import AuthGuard from "@/components/shared/AuthGuard";
 
+// Note ka type definition
 type Note = {
   id: string;
   title: string;
@@ -50,6 +53,7 @@ type Note = {
   shares: Share[];
 };
 
+// Share link ka type definition
 type Share = {
   id: string;
   token: string;
@@ -62,6 +66,7 @@ type Share = {
   passwordHash: string | null;
 };
 
+// Dashboard page ka main component
 export default function DashboardPage() {
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -74,6 +79,7 @@ export default function DashboardPage() {
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Notes ko API se fetch karne wala function
   const reloadNotes = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -103,19 +109,14 @@ export default function DashboardPage() {
     }
   };
 
+  // Component mount hone par notes fetch kar rahe hai
   useEffect(() => {
     let isMounted = true;
 
     const run = async () => {
-      // Schedule after the current render/effect phase.
-      // This avoids React Hook linting complaining about state updates in the effect body.
       setTimeout(async () => {
-        try {
-          if (!isMounted) return;
-          await reloadNotes();
-        } catch {
-          // reloadNotes already sets error state
-        }
+        if (!isMounted) return;
+        await reloadNotes();
       }, 0);
     };
 
@@ -127,16 +128,19 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Share link copy karne wala function
   const copyShareLink = (token: string) => {
     const url = `${window.location.origin}/share/${token}`;
     navigator.clipboard.writeText(url);
   };
 
+  // Date format karne wala function
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleString();
   };
 
+  // Share status batane wala function
   const getShareStatus = (share: Share) => {
     if (share.isRevoked)
       return { label: "Revoked", variant: "destructive" as const };
@@ -147,6 +151,7 @@ export default function DashboardPage() {
     return { label: "Active", variant: "default" as const };
   };
 
+  // Share link revoke karne wala function
   const revokeShare = async (shareId: string) => {
     setRevoking(true);
     try {
@@ -175,6 +180,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Note delete karne wala function
   const deleteNote = async (noteId: string) => {
     setDeleting(true);
     try {
@@ -201,6 +207,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Loading state ka UI
   if (loading) {
     return (
       <div className="min-h-screen bg-muted/40 py-10 px-4">
@@ -224,6 +231,7 @@ export default function DashboardPage() {
     );
   }
 
+  // Error state ka UI
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -242,6 +250,7 @@ export default function DashboardPage() {
     );
   }
 
+  // Dashboard ka main UI
   return (
     <AuthGuard requireAuth>
       <div className="min-h-screen bg-muted/40 py-10 px-4">
@@ -262,6 +271,7 @@ export default function DashboardPage() {
           </div>
 
           {notes.length === 0 ? (
+            // Agar koi note nahi hai to yeh UI dikhega
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -275,6 +285,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ) : (
+            // Notes list ka UI
             <div className="grid gap-4">
               {notes.map((note) => (
                 <Card key={note.id}>
@@ -306,7 +317,10 @@ export default function DashboardPage() {
                               </Link>
                             </DropdownMenuItem>
                             {!note.shares?.some(
-                              (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
+                              (s) =>
+                                !s.isRevoked &&
+                                (!s.expiresAt ||
+                                  new Date(s.expiresAt) > new Date()),
                             ) && (
                               <>
                                 <DropdownMenuSeparator />
@@ -433,6 +447,7 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Revoke confirmation dialog */}
         <Dialog
           open={!!shareLinkToRevoke}
           onOpenChange={(open) => !open && setShareLinkToRevoke(null)}
@@ -466,6 +481,7 @@ export default function DashboardPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Delete confirmation dialog */}
         <Dialog
           open={!!noteToDelete}
           onOpenChange={(open) => !open && setNoteToDelete(null)}

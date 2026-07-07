@@ -4,16 +4,20 @@ import prisma from "@/lib/prisma";
 import { enforceRateLimit, RateLimitError } from "@/lib/repositories/rate-limit";
 import { getIpAddress } from "@/lib/api-auth";
 
+// Share link ke through note access karne wala API endpoint
+// GET /api/share/:token - Share link ke through note view karta hai
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Step 1: URL se share token nikal rahe hai
     const { token } = await params;
     const ip = getIpAddress(request);
 
+    // Step 2: Rate limit check kar rahe hai - 30 requests per minute
     try {
-      await enforceRateLimit(`share:access:${token}:${ip}`, { limit: 30, window: 60, keyPrefix: "noteapp:ratelimit:share" });
+      await enforceRateLimit(`share:access:${token}:${ip}`, { limit: 10, window: 60, keyPrefix: "noteapp:ratelimit:share" });
     } catch (error) {
       if (error instanceof RateLimitError) {
         return Response.json(
@@ -24,24 +28,29 @@ export async function GET(
       throw error;
     }
 
+    // Step 3: Database se share data fetch kar rahe hai token se
     const share = await shareRepo.findByToken(token);
 
     if (!share) {
       return Response.json({ error: "Invalid share link" }, { status: 404 });
     }
 
+    // Step 4: Share link revoked hai ya nahi check kar rahe hai
     if (share.isRevoked) {
       return Response.json({ error: "Share link has been revoked" }, { status: 403 });
     }
 
+    // Step 5: Share link expire ho gaya hai ya nahi check kar rahe hai
     if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
       return Response.json({ error: "Share link has expired" }, { status: 410 });
     }
 
+    // Step 6: Share link pehle se use ho chuka hai ya nahi check kar rahe hai
     if (share.isUsed) {
       return Response.json({ error: "Share link has already been used" }, { status: 403 });
     }
 
+    // Step 7: Password protected share hai to password required response denge
     if (share.accessType === "PASSWORD") {
       return Response.json(
         {
@@ -52,12 +61,14 @@ export async function GET(
       );
     }
 
+    // Step 8: Note fetch kar rahe hai
     const note = await noteRepo.findById(share.noteId);
 
     if (!note) {
       return Response.json({ error: "Note not found" }, { status: 404 });
     }
 
+    // Step 9: Share type ke according view count update kar rahe hai
     if (share.shareType === "ONE_TIME") {
       const updateResult = await prisma.share.updateMany({
         where: { id: share.id, isUsed: false },
@@ -85,6 +96,7 @@ export async function GET(
       return Response.json({ error: "Internal server error" }, { status: 500 });
     }
 
+    // Step 10: Note data return kar rahe hai
     return Response.json(
       {
         note,

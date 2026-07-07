@@ -1,3 +1,5 @@
+// Notes list page component
+// User ki saari notes yahan list hoti hai
 "use client"
 
 import { useEffect, useState } from "react"
@@ -14,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, FileText, Plus } from "lucide-react"
 
+// Note ka type definition
 type Note = {
   id: string
   title: string
@@ -21,11 +24,13 @@ type Note = {
   createdAt: string
 }
 
+// Notes list page ka main component
 export default function NotesPage() {
   const router = useRouter()
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Component mount hone par notes fetch kar rahe hai
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -58,6 +63,7 @@ export default function NotesPage() {
     fetchNotes()
   }, [router])
 
+  // Loading state ka UI
   if (loading) {
     return (
       <div className="min-h-screen bg-muted/40 py-10 px-4">
@@ -81,6 +87,7 @@ export default function NotesPage() {
     )
   }
 
+  // Notes list page ka UI
   return (
     <div className="min-h-screen bg-muted/40 py-10 px-4">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -107,6 +114,7 @@ export default function NotesPage() {
         </div>
 
         {notes.length === 0 ? (
+          // Agar koi note nahi hai to yeh UI dikhega
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -120,6 +128,7 @@ export default function NotesPage() {
             </CardContent>
           </Card>
         ) : (
+          // Notes list ka UI
           <div className="grid gap-4">
             {notes.map((note) => (
               <Link key={note.id} href={`/notes/${note.id}`}>

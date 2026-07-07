@@ -1,3 +1,5 @@
+// Register page component
+// Naye user ka account create kar sakta hai
 "use client"
 
 import { useState } from "react"
@@ -17,6 +19,7 @@ import {
 import { PenLine } from "lucide-react"
 import AuthGuard from "@/components/shared/AuthGuard"
 
+// Register page ka main component
 export default function RegisterPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -24,12 +27,14 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // Form submit hone par registration request bhejne wala function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
+      // Register API ko call kar rahe hai
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,6 +48,7 @@ export default function RegisterPage() {
         return
       }
 
+      // Registration success ke baad login page pe redirect kar rahe hai
       router.push("/login")
     } catch {
       setError("Something went wrong")
@@ -51,6 +57,7 @@ export default function RegisterPage() {
     }
   }
 
+  // Register page ka UI
   return (
     <AuthGuard requireAuth={false}>
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">

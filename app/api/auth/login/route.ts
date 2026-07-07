@@ -6,12 +6,16 @@ import jwt from "jsonwebtoken";
 import { enforceRateLimit, RateLimitError } from "@/lib/repositories/rate-limit";
 import { getIpAddress } from "@/lib/api-auth";
 
+// User login karne wala API endpoint
+// POST /api/auth/login - Email aur password se login karta hai
 export async function POST(request: NextRequest) {
   try {
+    // Step 1: Request body se email aur password nikal rahe hai
     const body = await request.json();
     const result = loginSchema.safeParse(body);
 
     if (!result.success) {
+      // Agar validation fail ho jaye to error return kar denge
       const flattened = result.error.flatten();
       const fieldErrors = Object.values(flattened.fieldErrors).flat().filter(Boolean);
       const message = fieldErrors.length > 0 ? fieldErrors.join(", ") : flattened.formErrors.join(", ") || "Invalid input";
@@ -22,6 +26,7 @@ export async function POST(request: NextRequest) {
     const password = result.data.password;
     const ip = getIpAddress(request)
 
+    // Step 2: Rate limit check kar rahe hai - 5 attempts per minute
     try {
       await enforceRateLimit(`login:${ip}`, { limit: 5, window: 60, keyPrefix: "noteapp:ratelimit:login" });
     } catch (error) {
@@ -34,8 +39,7 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-
-
+    // Step 3: Database se user fetch kar rahe hai email se
     const user = await userRepo.findByEmail(email);
 
     if (!user) {
@@ -45,6 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Step 4: Password verify kar rahe hai
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -54,6 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Step 5: JWT token generate kar rahe hai
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET missing");
     }
@@ -62,6 +68,7 @@ export async function POST(request: NextRequest) {
       expiresIn: "24h",
     });
 
+    // Step 6: User data aur token return kar rahe hai
     return Response.json(
       {
         user: {

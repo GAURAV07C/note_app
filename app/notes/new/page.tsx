@@ -1,3 +1,5 @@
+// New note page component
+// User yahan nayi note create kar sakta hai
 "use client"
 
 import { useState } from "react"
@@ -23,6 +25,7 @@ import {
 } from "@/components/ui/card"
 import { Copy, Check, ArrowLeft } from "lucide-react"
 
+// New note page ka main component
 export default function NewNotePage() {
   const router = useRouter()
   const [title, setTitle] = useState("")
@@ -37,6 +40,7 @@ export default function NewNotePage() {
   const [generatedPassword, setGeneratedPassword] = useState("")
   const [copied, setCopied] = useState(false)
 
+  // Password generate karne wala function
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     const array = new Uint8Array(12)
@@ -46,6 +50,7 @@ export default function NewNotePage() {
     setGeneratedPassword(newPassword)
   }
 
+  // Password copy karne wala function
   const copyPassword = () => {
     if (password) {
       navigator.clipboard.writeText(password)
@@ -54,6 +59,7 @@ export default function NewNotePage() {
     }
   }
 
+  // Naye note ko save karne wala function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -110,6 +116,7 @@ export default function NewNotePage() {
     }
   }
 
+  // Share link copy karne wala function
   const copyToClipboard = () => {
     if (shareLink) {
       navigator.clipboard.writeText(shareLink)
@@ -118,6 +125,7 @@ export default function NewNotePage() {
     }
   }
 
+  // New note page ka UI
   return (
     <div className="min-h-screen bg-muted/40 py-10 px-4">
       <div className="mx-auto max-w-2xl">
