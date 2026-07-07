@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { noteRepo } from "@/lib/repositories";
 import { createNoteSchema } from "@/lib/schema";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const share = note.shares?.[0] || null;
+    const share = (note as { shares?: Array<{ token: string }> }).shares?.[0] || null;
 
     // Step 5: Share link generate kar rahe hai
     const shareLink = share

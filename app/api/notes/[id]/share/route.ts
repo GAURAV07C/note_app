@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { noteRepo, shareRepo } from "@/lib/repositories";
 import { createShareSchema } from "@/lib/schema";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/app/generated/prisma/client";
+import type { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { getAuthenticatedUserId } from "@/lib/api-auth";
 
@@ -52,7 +52,7 @@ export async function POST(
     // Step 5: Pehle se active share link hai ya nahi check kar rahe hai
     const existingShares = await shareRepo.findByNoteId(id);
     const activeShare = existingShares.find(
-      (s) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
+      (s: { isRevoked: boolean; expiresAt: Date | null }) => !s.isRevoked && (!s.expiresAt || new Date(s.expiresAt) > new Date())
     );
     if (activeShare) {
       console.error("DEBUG activeShare error for noteId", id);
